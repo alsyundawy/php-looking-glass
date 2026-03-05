@@ -5,7 +5,7 @@
  * ========================================================================
  * 
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.0.2
+ * @version     : 1.0.3
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -63,9 +63,15 @@
  *   - Updated hero background in light mode to match dark mode style.
  *   - Updated lg-log.webp & hero-lg.webp.
  *   - Optimize CSS & JS Minify.
- *   - Updated hero background in light mode to match dark mode style.
- 
- 
+ *
+ * v1.0.3 - 2026-03-05
+ *   - Fixed undefined $script_name variable; now uses $_SERVER['SCRIPT_NAME'].
+ *   - Fixed incorrect date() format from 'YY-mm-dd' to 'Y-m-d' (ISO 8601).
+ *   - Fixed missing https:// scheme on cdnjs.cloudflare.com preconnect tag.
+ *   - Fixed JavaScript syntax error: invalid jQuery selector $((html,body)).
+ *   - Increased fread() buffer from 8192 to 16384 for faster streaming output.
+ *   - Removed duplicate changelog entry and blank lines in doc comment.
+ *   - Code review and optimization pass.
  * 
  * ========================================================================
  */
@@ -279,7 +285,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             if (stream_select($read, $write, $except, 1) > 0) {
                 foreach ($read as $pipe) {
-                    $output = fread($pipe, 8192);
+                    $output = fread($pipe, 16384);
                     if ($output !== false && strlen($output) > 0) {
                         echo sanitize_output($output);
                         flush();
@@ -332,11 +338,11 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<?php
 	// --- Basic vars (assume already defined earlier)
-	$appVersion = '1.0.2';
-	$dateModified = date('YY-mm-dd'); // automatic
+	$appVersion = '1.0.3';
+	$dateModified = date('Y-m-d'); // automatic (ISO 8601: YYYY-MM-DD)
 	$siteNameSafe = sanitize_output($siteName);
 	$siteUrlSafe = rtrim(sanitize_output($siteUrl), '/');
-	$scriptPathSafe = sanitize_output($script_name);
+	$scriptPathSafe = sanitize_output($_SERVER['SCRIPT_NAME'] ?? '/');
 
 	// Meta description (keep ~150 chars)
 	$metaDescription = sprintf(
@@ -419,7 +425,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 	<link rel="dns-prefetch" href="https://fonts.googleapis.com">
 	<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-	<link rel="preconnect" href="cdnjs.cloudflare.com" crossorigin>
+	<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 	<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 	<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1037,7 +1043,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-console.log("ALSYUNDAWY Looking Glass Network Tools CopyLeft © 2025-2026 | ALSYUNDAWY IT SOLUTION | AS696969 | DESIGN OLEH HARRY DERTIN SUTISNA ALSYUNDAWY | https://github.com/alsyundawy"),function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$((html,body)).animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text("")}))}();
+console.log("ALSYUNDAWY Looking Glass Network Tools CopyLeft © 2025-2026 | ALSYUNDAWY IT SOLUTION | AS696969 | DESIGN OLEH HARRY DERTIN SUTISNA ALSYUNDAWY | https://github.com/alsyundawy"),function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text("")}))}();
 </script>
 </body>
 </html>
