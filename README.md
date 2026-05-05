@@ -22,7 +22,7 @@
 
 ## Features
 
-- **Network Diagnostics**: Ping, Traceroute, MTR (My Traceroute), and Host (DNS Lookup).
+- **Network Diagnostics**: Ping, Traceroute, MTR (My Traceroute), WHOIS Lookup, and DNS Lookup.
 - **Performance Testing**:
   - **Iperf3**: TCP, UDP, and Reverse mode support.
   - **Download Tests**: Customizable binary file downloads.
@@ -43,7 +43,8 @@
   - `traceroute`
   - `mtr`
   - `iperf3`
-  - `host` (usually part of `bind-utils` or `dnsutils`)
+  - `whois`
+  - `dig` or `host` (usually part of `bind-utils` or `dnsutils`)
 
 ---
 
@@ -55,13 +56,13 @@
 
 ```bash
 sudo apt-get update
-sudo apt-get install php-cli php-fpm php-json php-common php-mbstring php-xml ping traceroute mtr-tiny iperf3 dnsutils -y
+sudo apt-get install php-cli php-fpm php-json php-common php-mbstring php-xml ping traceroute mtr-tiny iperf3 dnsutils whois -y
 ```
 
 **CentOS/RHEL/AlmaLinux:**
 
 ```bash
-sudo dnf install php-cli php-fpm php-json php-common php-mbstring php-xml iputils traceroute mtr iperf3 bind-utils -y
+sudo dnf install php-cli php-fpm php-json php-common php-mbstring php-xml iputils traceroute mtr iperf3 bind-utils whois -y
 ```
 
 ### 2. Deployment
@@ -536,7 +537,7 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ### 3. "Command not found" or Empty Output
 
-- Verify that `ping`, `traceroute`, `mtr`, etc., are installed (`which ping`).
+- Verify that `ping`, `traceroute`, `mtr`, `whois`, `dig`, etc., are installed (`which ping`).
 - Check `php.ini` to ensure `proc_open` and `proc_get_status` are NOT in `disable_functions`.
 
 ### 4. Iperf3 Connection Refused
@@ -548,6 +549,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.0.4 - 2026-05-05
+
+- Added WHOIS tab for IP & domain WHOIS lookup with human-readable output.
+- Added DNS Lookup tab (A, AAAA, NS, MX, SOA, TXT) with modern responsive table display and Font Awesome icons per record type.
+- WHOIS results parsed and presented in user-friendly format for non-technical users.
+- DNS Lookup results rendered as structured tables per record type.
+- Both new tabs use AJAX with CSRF protection, consistent with existing tabs.
+- Updated requirements to include `whois` and `dig` system utilities.
+- Minified WHOIS & DNS Lookup CSS and JavaScript.
 
 ### v1.0.3 - 2026-03-05
 

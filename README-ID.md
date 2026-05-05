@@ -22,7 +22,7 @@
 
 ## Fitur
 
-- **Diagnostik Jaringan**: Ping, Traceroute, MTR (My Traceroute), dan Host (Pencarian DNS).
+- **Diagnostik Jaringan**: Ping, Traceroute, MTR (My Traceroute), Pencarian WHOIS, dan Pencarian DNS.
 - **Pengujian Performa**:
   - **Iperf3**: Dukungan mode TCP, UDP, dan Reverse.
   - **Uji Unduhan**: Unduhan file biner yang dapat dikustomisasi.
@@ -43,7 +43,8 @@
   - `traceroute`
   - `mtr`
   - `iperf3`
-  - `host` (biasanya bagian dari paket `bind-utils` atau `dnsutils`)
+  - `whois`
+  - `dig` atau `host` (biasanya bagian dari paket `bind-utils` atau `dnsutils`)
 
 ---
 
@@ -55,13 +56,13 @@
 
 ```bash
 sudo apt-get update
-sudo apt-get install php-cli php-fpm php-json php-common php-mbstring php-xml ping traceroute mtr-tiny iperf3 dnsutils -y
+sudo apt-get install php-cli php-fpm php-json php-common php-mbstring php-xml ping traceroute mtr-tiny iperf3 dnsutils whois -y
 ```
 
 **CentOS/RHEL/AlmaLinux:**
 
 ```bash
-sudo dnf install php-cli php-fpm php-json php-common php-mbstring php-xml iputils traceroute mtr iperf3 bind-utils -y
+sudo dnf install php-cli php-fpm php-json php-common php-mbstring php-xml iputils traceroute mtr iperf3 bind-utils whois -y
 ```
 
 ### 2. Pemasangan
@@ -536,7 +537,7 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ### 3. "Command not found" atau Output Kosong
 
-- Verifikasi bahwa `ping`, `traceroute`, `mtr`, dan lainnya sudah terinstal (`which ping`).
+- Verifikasi bahwa `ping`, `traceroute`, `mtr`, `whois`, `dig`, dan lainnya sudah terinstal (`which ping`).
 - Periksa `php.ini` untuk memastikan `proc_open` dan `proc_get_status` TIDAK ada di `disable_functions`.
 
 ### 4. Iperf3 Connection Refused
@@ -548,6 +549,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.0.4 - 2026-05-05
+
+- Menambahkan tab WHOIS untuk pencarian WHOIS IP & domain dengan output yang mudah dibaca.
+- Menambahkan tab DNS Lookup (A, AAAA, NS, MX, SOA, TXT) dengan tampilan tabel responsif modern dan ikon Font Awesome per tipe record.
+- Hasil WHOIS diparsing dan disajikan dalam format yang ramah pengguna bagi pengguna non-teknis.
+- Hasil DNS Lookup dirender sebagai tabel terstruktur per tipe record.
+- Kedua tab baru menggunakan AJAX dengan perlindungan CSRF, konsisten dengan tab yang sudah ada.
+- Memperbarui persyaratan untuk menyertakan utilitas sistem `whois` dan `dig`.
+- Minifikasi CSS dan JavaScript WHOIS & DNS Lookup.
 
 ### v1.0.3 - 2026-03-05
 
