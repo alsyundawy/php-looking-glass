@@ -5,7 +5,7 @@
  * ========================================================================
  * 
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.0.4
+ * @version     : 1.0.5
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -84,22 +84,325 @@
  *   - Both new tabs use AJAX with CSRF protection, consistent with existing tabs.
  *   - Updated requirements to include whois and dig system utilities.
  *   - Minified WHOIS & DNS Lookup CSS and JavaScript.
+ *
+ * v1.0.5 - 2026-05-28
+ *   - Hardened command execution by replacing shell-based command strings with
+ *     proc_open() argv arrays to bypass the shell and reduce command injection risk.
+ *   - Replaced shell_exec() usage in WHOIS and DNS Lookup handlers with the same
+ *     controlled proc_open() runner and timeout handling.
+ *   - Added safer cookie-domain detection that strips ports/brackets and avoids
+ *     invalid session cookie domains on localhost, IP addresses, and host:port setups.
+ *   - Added Content-Security-Policy and Permissions-Policy headers compatible with
+ *     the existing CDN, inline CSS/JS, ipify client-IP lookups, and local assets.
+ *   - Improved host validation, timeout behavior, stderr handling, JSON response
+ *     encoding, and output streaming without changing the existing UI layout.
+ *   - Reduced hard PHP extension checks to extensions actually used by this file.
+ *   - Updated JSON-LD softwareVersion/dateModified and fixed FAQ feature wording.
  * 
  * ========================================================================
  */
 
 declare(strict_types=1);
 
+const APP_VERSION = '1.0.5';
+const APP_UPDATED = '2026-05-28';
+
 function error_die(string $title, string $message): never
 {
     http_response_code(500);
-    if (php_sapi_name() === 'cli') {
-        die("$title\n$message\n");
-    } else {
-        $html = '<div style="font-family: sans-serif; padding: 20px; border: 2px solid red; margin: 20px;">' .
-            '<strong>' . htmlspecialchars($title) . '</strong><br>' .
-            htmlspecialchars($message) . '</div>';
-        die($html);
+
+    if (PHP_SAPI === 'cli') {
+        die($title . PHP_EOL . $message . PHP_EOL);
+    }
+
+    $html = '<div style="font-family: sans-serif; padding: 20px; border: 2px solid red; margin: 20px;">' .
+        '<strong>' . sanitize_output($title) . '</strong><br>' .
+        sanitize_output($message) . '</div>';
+
+    die($html);
+}
+
+function sanitize_output(mixed $output): string
+{
+    return htmlspecialchars((string) $output, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
+}
+
+function is_https_request(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        return true;
+    }
+
+    if (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443') {
+        return true;
+    }
+
+    $forwarded_proto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    return $forwarded_proto === 'https';
+}
+
+function safe_cookie_domain(): string
+{
+    $raw_host = (string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '');
+    $parsed_host = parse_url('http://' . $raw_host, PHP_URL_HOST);
+
+    if (!is_string($parsed_host) || $parsed_host === '') {
+        return '';
+    }
+
+    $host = strtolower(trim($parsed_host, "[] \t\n\r\0\x0B."));
+    if (
+        $host === '' ||
+        $host === 'localhost' ||
+        filter_var($host, FILTER_VALIDATE_IP) !== false ||
+        strpos($host, '.') === false ||
+        !preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i', $host)
+    ) {
+        return '';
+    }
+
+    return '.' . $host;
+}
+
+function normalize_host_input(string $host): string
+{
+    $host = trim($host);
+
+    if (str_starts_with($host, '[') && str_ends_with($host, ']')) {
+        $host = substr($host, 1, -1);
+    }
+
+    return rtrim($host, '.');
+}
+
+function utf8_length(string $value): int
+{
+    return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+}
+
+function validate_host(string $host): bool
+{
+    $host = normalize_host_input($host);
+
+    if ($host === '' || utf8_length($host) > 253) {
+        return false;
+    }
+
+    if (preg_match('/[\x00-\x20\x7f]/', $host)) {
+        return false;
+    }
+
+    if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+        return true;
+    }
+
+    if (str_contains($host, ':') || str_contains($host, '..')) {
+        return false;
+    }
+
+    $labels = explode('.', $host);
+    if (count($labels) < 2) {
+        return false;
+    }
+
+    foreach ($labels as $label) {
+        $length = utf8_length($label);
+        if ($label === '' || $length > 63) {
+            return false;
+        }
+
+        if (str_starts_with($label, '-') || str_ends_with($label, '-')) {
+            return false;
+        }
+
+        if (!preg_match('/^[a-z0-9\pL\pM-]+$/iu', $label)) {
+            return false;
+        }
+    }
+
+    $tld = end($labels);
+    return is_string($tld) && !preg_match('/^\d+$/', $tld) && utf8_length($tld) >= 2;
+}
+
+function json_response(array $payload, int $status_code = 200): never
+{
+    http_response_code($status_code);
+    header('Content-Type: application/json; charset=utf-8');
+
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+    if ($json === false) {
+        http_response_code(500);
+        echo '{"error":"Failed to encode JSON response."}';
+        exit;
+    }
+
+    echo $json;
+    exit;
+}
+
+function shell_display_arg(string $argument): string
+{
+    if (preg_match('/^[A-Za-z0-9_+.,:\/=@%-]+$/', $argument)) {
+        return $argument;
+    }
+
+    return "'" . str_replace("'", "'\\''", $argument) . "'";
+}
+
+function command_to_display(array $command): string
+{
+    return implode(' ', array_map(
+        static fn(mixed $argument): string => shell_display_arg((string) $argument),
+        $command
+    ));
+}
+
+/**
+ * Execute a system utility using argv-array proc_open().
+ *
+ * Passing an array command to proc_open() avoids shell interpolation and keeps
+ * user input as a single process argument. All output is still escaped before
+ * it is sent to the browser.
+ *
+ * @param array<int, string> $command
+ * @return array{stdout:string, stderr:string, exit_code:int|null, timed_out:bool, started:bool}
+ */
+function run_process(array $command, int $timeout = 30, ?callable $stdout_callback = null, ?callable $stderr_callback = null): array
+{
+    $descriptor_spec = [
+        0 => ['pipe', 'r'],
+        1 => ['pipe', 'w'],
+        2 => ['pipe', 'w'],
+    ];
+
+    $pipes = [];
+    $process = @proc_open($command, $descriptor_spec, $pipes);
+
+    if (!is_resource($process)) {
+        return [
+            'stdout' => '',
+            'stderr' => 'Failed to start process: ' . command_to_display($command),
+            'exit_code' => null,
+            'timed_out' => false,
+            'started' => false,
+        ];
+    }
+
+    fclose($pipes[0]);
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+
+    $stdout = '';
+    $stderr = '';
+    $timed_out = false;
+    $started_at = microtime(true);
+
+    while (true) {
+        $read = [];
+
+        if (is_resource($pipes[1]) && !feof($pipes[1])) {
+            $read[] = $pipes[1];
+        }
+
+        if (is_resource($pipes[2]) && !feof($pipes[2])) {
+            $read[] = $pipes[2];
+        }
+
+        if ($read !== []) {
+            $write = null;
+            $except = null;
+            $selected = @stream_select($read, $write, $except, 1);
+
+            if ($selected !== false && $selected > 0) {
+                foreach ($read as $pipe) {
+                    $chunk = fread($pipe, 16384);
+
+                    if ($chunk === false || $chunk === '') {
+                        continue;
+                    }
+
+                    if ($pipe === $pipes[1]) {
+                        $stdout .= $chunk;
+                        if ($stdout_callback !== null) {
+                            $stdout_callback($chunk);
+                        }
+                    } else {
+                        $stderr .= $chunk;
+                        if ($stderr_callback !== null) {
+                            $stderr_callback($chunk);
+                        }
+                    }
+                }
+            }
+        } else {
+            usleep(100000);
+        }
+
+        $status = proc_get_status($process);
+        if (!$status['running']) {
+            break;
+        }
+
+        if ((microtime(true) - $started_at) > $timeout) {
+            $timed_out = true;
+            proc_terminate($process, 15);
+            usleep(200000);
+
+            $status = proc_get_status($process);
+            if ($status['running']) {
+                proc_terminate($process, 9);
+            }
+
+            break;
+        }
+    }
+
+    foreach ([1, 2] as $index) {
+        if (isset($pipes[$index]) && is_resource($pipes[$index])) {
+            $remaining = stream_get_contents($pipes[$index]);
+            if ($remaining !== false && $remaining !== '') {
+                if ($index === 1) {
+                    $stdout .= $remaining;
+                    if ($stdout_callback !== null) {
+                        $stdout_callback($remaining);
+                    }
+                } else {
+                    $stderr .= $remaining;
+                    if ($stderr_callback !== null) {
+                        $stderr_callback($remaining);
+                    }
+                }
+            }
+
+            fclose($pipes[$index]);
+        }
+    }
+
+    $exit_code = proc_close($process);
+
+    return [
+        'stdout' => $stdout,
+        'stderr' => $stderr,
+        'exit_code' => is_int($exit_code) ? $exit_code : null,
+        'timed_out' => $timed_out,
+        'started' => true,
+    ];
+}
+
+function emit_security_headers(): void
+{
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 0');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header("Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://api.ipify.org https://api6.ipify.org");
+
+    if (is_https_request()) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
     }
 }
 
@@ -110,8 +413,8 @@ if (version_compare(PHP_VERSION, '8.1.0', '<')) {
     );
 }
 
-$required_extensions = ['filter', 'openssl', 'mbstring', 'json', 'curl'];
-$missing_extensions = array_filter($required_extensions, fn($ext) => !extension_loaded($ext));
+$required_extensions = ['filter', 'json'];
+$missing_extensions = array_filter($required_extensions, static fn(string $ext): bool => !extension_loaded($ext));
 
 if (!empty($missing_extensions)) {
     error_die(
@@ -120,11 +423,21 @@ if (!empty($missing_extensions)) {
     );
 }
 
-$required_functions = ['proc_open', 'proc_get_status', 'proc_close', 'stream_get_contents'];
-$disabled_functions = array_map('trim', explode(',', ini_get('disable_functions') ?? ''));
+$required_functions = [
+    'proc_open',
+    'proc_get_status',
+    'proc_close',
+    'proc_terminate',
+    'stream_get_contents',
+    'stream_select',
+    'fread',
+    'fclose',
+];
+
+$disabled_functions = array_filter(array_map('trim', explode(',', (string) ini_get('disable_functions'))));
 $missing_functions = array_filter(
     $required_functions,
-    fn($func) => !function_exists($func) || in_array($func, $disabled_functions, true)
+    static fn(string $func): bool => !function_exists($func) || in_array($func, $disabled_functions, true)
 );
 
 if (!empty($missing_functions)) {
@@ -134,64 +447,54 @@ if (!empty($missing_functions)) {
     );
 }
 
-// PHP optimization for 16-core, RAM 24 GB
-ini_set('realpath_cache_size', '8192k');    // 8 MB cache path
-ini_set('realpath_cache_ttl', '1200');      // 10 minutes
-ini_set('opcache.enable', '1');
-ini_set('opcache.memory_consumption', '1024');      // 768 MB for compiled code
-ini_set('opcache.max_accelerated_files', '30000');  // max file limit for large application
-ini_set('opcache.interned_strings_buffer', '32');   // 32 MB for interned strings
-ini_set('opcache.fast_shutdown', '1');
-ini_set('opcache.validate_timestamps', '0');        // disable stat-check in prod; manual reload if needed
-ini_set('opcache.revalidate_freq', '60');       // check files every 60 seconds if timestamps are enabled
-
+// PHP optimization hint for high-resource single-file deployment.
+@ini_set('realpath_cache_size', '8192k');          // 8 MB path cache.
+@ini_set('realpath_cache_ttl', '1200');            // 20 minutes.
+@ini_set('opcache.enable', '1');
+@ini_set('opcache.memory_consumption', '1024');    // 1024 MB for compiled code if PHP-FPM policy allows it.
+@ini_set('opcache.max_accelerated_files', '30000');
+@ini_set('opcache.interned_strings_buffer', '32');
+@ini_set('opcache.validate_timestamps', '0');      // Production mode; reload PHP-FPM after deployment.
+@ini_set('opcache.revalidate_freq', '60');
 
 ini_set('session.cookie_httponly', '1');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.cookie_samesite', 'Strict');
-session_name("LG_SID");
 
-$cookie_domain = $_SERVER["HTTP_HOST"] ?? '';
-if ($cookie_domain === 'localhost' || filter_var($cookie_domain, FILTER_VALIDATE_IP) || strpos($cookie_domain, '.') === false) {
-    $cookie_domain = '';
-} elseif (strpos($cookie_domain, '.') !== 0) {
-    $cookie_domain = '.' . $cookie_domain;
-}
+session_name('LG_SID');
 
-session_set_cookie_params([
+$session_cookie_params = [
     'lifetime' => 3600,
     'path' => '/',
-    'domain' => $cookie_domain,
-    'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+    'secure' => is_https_request(),
     'httponly' => true,
-    'samesite' => 'Strict'
-]);
+    'samesite' => 'Strict',
+];
+
+$cookie_domain = safe_cookie_domain();
+if ($cookie_domain !== '') {
+    $session_cookie_params['domain'] = $cookie_domain;
+}
+
+session_set_cookie_params($session_cookie_params);
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (empty($_SESSION['csrf'])) {
+if (empty($_SESSION['csrf']) || !is_string($_SESSION['csrf'])) {
     try {
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         http_response_code(500);
-        error_log("Failed to generate CSRF token: " . $e->getMessage());
+        error_log('Failed to generate CSRF token: ' . $e->getMessage());
         die('Internal server error: Failed to create security token.');
     }
 }
+
 $csrf_token = $_SESSION['csrf'];
 
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
-header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: DENY");
-header("X-XSS-Protection: 1; mode=block");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-    header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-}
+emit_security_headers();
 
 // Hardcoded Looking Glass Tools Configuration
 $ipv4 = 'lg.yourdomain.com';
@@ -201,51 +504,35 @@ $siteUrl = 'https://lg.yourdomain.com';
 $siteUrlv4 = 'https://lg.yourdomain.com';
 $siteUrlv6 = 'https://lg.yourdomain.com';
 $serverLocation = 'JAKARTA - INDONESIA';
+
+// Tool disable flags. Keep false/empty to enable the existing UI tabs.
+$ping = false;
+$traceroute = false;
+$mtr = false;
+$host_cmd = false;
+
 // Iperf Port
 $iperfport = '5201';
+
 // Test files
-$testFiles = array('250MB', '500MB', '1GB');
+$testFiles = ['250MB', '500MB', '1GB'];
 
-
-// ============================================================================
-
-
-function sanitize_output(mixed $output): string
-{
-    $output = (string) $output;
-    return htmlspecialchars($output, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-}
-
-function validate_host(string $host): bool
-{
-    $sanitized_host = preg_replace('/[^\pL\pM\pN\-._:]/u', '', $host);
-    if ($host !== $sanitized_host)
-        return false;
-    if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
-        return true;
-    }
-    return (
-        preg_match('/^([a-zA-Z0-9\-\pL\pM]+\.)+[a-zA-Z\pL\pM]{2,}$/u', $host) &&
-        strlen($host) <= 253
-    );
-}
-
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     header('Content-Type: text/plain; charset=utf-8');
-    header('X-Accel-Buffering: no'); // Disable Nginx buffering
-    header('Content-Encoding: none'); // Disable compression for streaming
+    header('X-Accel-Buffering: no');
+    header('Content-Encoding: none');
 
-    $host = trim($_POST['host'] ?? '');
-    $cmd = trim($_POST['cmd'] ?? '');
-    $csrf = $_POST['csrf'] ?? '';
+    $host = normalize_host_input((string) ($_POST['host'] ?? ''));
+    $cmd = trim((string) ($_POST['cmd'] ?? ''));
+    $csrf = (string) ($_POST['csrf'] ?? '');
 
-    if (empty($csrf) || !hash_equals($_SESSION['csrf'], $csrf)) {
+    if ($csrf === '' || !hash_equals($_SESSION['csrf'], $csrf)) {
         http_response_code(403);
         echo "Session Invalid. Please reload the page & Try again.\nSesi Tidak Valid. Silahkan muat ulang halaman dan mencoba kembali.";
         exit;
     }
 
-    if (empty($host) || !validate_host($host)) {
+    if ($host === '' || !validate_host($host)) {
         http_response_code(400);
         echo "Error: Invalid host or IP address.\nValid examples: 8.8.8.8, 2001:4860:4860::8888, or google.com";
         exit;
@@ -253,13 +540,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     // --- WHOIS Handler ---
     if ($cmd === 'whois') {
-        header('Content-Type: application/json; charset=utf-8');
-        $whois_cmd = 'whois ' . escapeshellarg($host) . ' 2>&1';
-        $raw = shell_exec($whois_cmd);
-        if ($raw === null || trim($raw) === '') {
-            echo json_encode(['error' => 'WHOIS lookup failed or returned empty result.']);
-            exit;
+        $result = run_process(['whois', $host], 30);
+        $raw = trim($result['stdout'] . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''));
+
+        if ($raw === '') {
+            json_response(['error' => 'WHOIS lookup failed or returned empty result.'], 500);
         }
+
         $parsed = [];
         $labels = [
             'domain name' => ['label' => 'Nama Domain', 'icon' => 'fa-globe', 'info' => 'Nama domain yang terdaftar'],
@@ -282,7 +569,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             'tech email' => ['label' => 'Email Teknis', 'icon' => 'fa-at', 'info' => 'Email untuk urusan teknis domain'],
             'abuse contact email' => ['label' => 'Email Pelaporan Abuse', 'icon' => 'fa-triangle-exclamation', 'info' => 'Email untuk melaporkan penyalahgunaan'],
             'abuse contact phone' => ['label' => 'Telepon Pelaporan Abuse', 'icon' => 'fa-phone', 'info' => 'Telepon untuk melaporkan penyalahgunaan'],
-            // IP WHOIS fields
             'netname' => ['label' => 'Nama Jaringan', 'icon' => 'fa-network-wired', 'info' => 'Nama blok jaringan IP ini'],
             'netrange' => ['label' => 'Rentang IP', 'icon' => 'fa-arrows-left-right', 'info' => 'Rentang alamat IP dalam blok ini'],
             'cidr' => ['label' => 'CIDR', 'icon' => 'fa-diagram-project', 'info' => 'Notasi CIDR dari blok IP'],
@@ -300,58 +586,81 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             'source' => ['label' => 'Sumber Data', 'icon' => 'fa-database', 'info' => 'Database WHOIS sumber informasi'],
             'status' => ['label' => 'Status', 'icon' => 'fa-circle-info', 'info' => 'Status alokasi IP'],
         ];
+
         $seen_keys = [];
-        $lines = explode("\n", $raw);
-        foreach ($lines as $line) {
+        foreach (explode("\n", $raw) as $line) {
             $line = trim($line);
-            if ($line === '' || $line[0] === '%' || $line[0] === '#') continue;
-            if (strpos($line, ':') === false) continue;
+
+            if ($line === '' || $line[0] === '%' || $line[0] === '#') {
+                continue;
+            }
+
+            if (!str_contains($line, ':')) {
+                continue;
+            }
+
             [$key, $value] = explode(':', $line, 2);
             $key = strtolower(trim($key));
             $value = trim($value);
-            if ($value === '') continue;
-            if (isset($labels[$key])) {
-                $map_key = $key;
-                if ($key === 'name server' || $key === 'domain status' || $key === 'descr') {
-                    if (!isset($seen_keys[$map_key])) $seen_keys[$map_key] = 0;
-                    $seen_keys[$map_key]++;
-                    $parsed[] = [
-                        'key' => $labels[$map_key]['label'] . ($seen_keys[$map_key] > 1 ? ' (' . $seen_keys[$map_key] . ')' : ''),
-                        'value' => $value,
-                        'icon' => $labels[$map_key]['icon'],
-                        'info' => $labels[$map_key]['info'],
-                    ];
-                } else {
-                    if (isset($seen_keys[$map_key])) continue;
-                    $seen_keys[$map_key] = 1;
-                    $parsed[] = [
-                        'key' => $labels[$map_key]['label'],
-                        'value' => $value,
-                        'icon' => $labels[$map_key]['icon'],
-                        'info' => $labels[$map_key]['info'],
-                    ];
-                }
+
+            if ($value === '' || !isset($labels[$key])) {
+                continue;
             }
+
+            $map_key = $key;
+            if (in_array($key, ['name server', 'domain status', 'descr'], true)) {
+                $seen_keys[$map_key] = ($seen_keys[$map_key] ?? 0) + 1;
+                $parsed[] = [
+                    'key' => $labels[$map_key]['label'] . ($seen_keys[$map_key] > 1 ? ' (' . $seen_keys[$map_key] . ')' : ''),
+                    'value' => $value,
+                    'icon' => $labels[$map_key]['icon'],
+                    'info' => $labels[$map_key]['info'],
+                ];
+                continue;
+            }
+
+            if (isset($seen_keys[$map_key])) {
+                continue;
+            }
+
+            $seen_keys[$map_key] = 1;
+            $parsed[] = [
+                'key' => $labels[$map_key]['label'],
+                'value' => $value,
+                'icon' => $labels[$map_key]['icon'],
+                'info' => $labels[$map_key]['info'],
+            ];
         }
-        echo json_encode(['parsed' => $parsed, 'raw' => $raw, 'host' => $host], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
+
+        json_response([
+            'parsed' => $parsed,
+            'raw' => $raw,
+            'host' => $host,
+            'timed_out' => $result['timed_out'],
+        ]);
     }
 
     // --- DNS Lookup Handler ---
     if ($cmd === 'dnslookup') {
-        header('Content-Type: application/json; charset=utf-8');
         $record_types = ['A', 'AAAA', 'NS', 'MX', 'SOA', 'TXT'];
         $results = [];
+        $errors = [];
+
         foreach ($record_types as $type) {
-            $dig_cmd = 'dig +noall +answer +nocmd ' . escapeshellarg($host) . ' ' . escapeshellarg($type) . ' 2>&1';
-            $output = shell_exec($dig_cmd);
+            $result = run_process(['dig', '+time=3', '+tries=1', '+noall', '+answer', '+nocmd', $host, $type], 12);
+            $output = trim($result['stdout']);
             $records = [];
-            if ($output !== null && trim($output) !== '') {
-                foreach (explode("\n", trim($output)) as $line) {
+
+            if ($output !== '') {
+                foreach (explode("\n", $output) as $line) {
                     $line = trim($line);
-                    if ($line === '' || $line[0] === ';') continue;
+
+                    if ($line === '' || $line[0] === ';') {
+                        continue;
+                    }
+
                     $parts = preg_split('/\s+/', $line, 5);
-                    if (count($parts) >= 5) {
+                    if ($parts !== false && count($parts) >= 5) {
                         $records[] = [
                             'name' => $parts[0],
                             'ttl' => $parts[1],
@@ -359,7 +668,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             'type' => $parts[3],
                             'value' => $parts[4],
                         ];
-                    } elseif (count($parts) >= 4) {
+                    } elseif ($parts !== false && count($parts) >= 4) {
                         $records[] = [
                             'name' => $parts[0],
                             'ttl' => $parts[1],
@@ -370,100 +679,82 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     }
                 }
             }
+
+            if ($result['stderr'] !== '' || $result['timed_out']) {
+                $errors[$type] = trim($result['stderr'] . ($result['timed_out'] ? "\nDNS query timed out." : ''));
+            }
+
             $results[$type] = $records;
         }
-        echo json_encode(['records' => $results, 'host' => $host], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
+
+        json_response([
+            'records' => $results,
+            'errors' => $errors,
+            'host' => $host,
+        ]);
     }
 
     $command_map = [
-        'host' => (empty($host_cmd) ? 'host -W 1 %s' : ''),
-        'mtr' => (empty($mtr) ? 'mtr -4 -c 10 -w -b %s' : ''),
-        'mtr6' => (empty($mtr) ? 'mtr -6 -c 10 -w -b %s' : ''),
-        'ping' => (empty($ping) ? 'ping -4 -c 20 -w 25 %s' : ''),
-        'ping6' => (empty($ping) ? 'ping -6 -c 20 -w 25 %s' : ''),
-        'traceroute' => (empty($traceroute) ? 'traceroute -4 -w 1 -q 1 -m 30 %s' : ''),
-        'traceroute6' => (empty($traceroute) ? 'traceroute -6 -w 1 -q 1 -m 30 %s' : ''),
+        'host' => empty($host_cmd) ? ['host', '-W', '1', $host] : null,
+        'mtr' => empty($mtr) ? ['mtr', '-4', '-c', '10', '-w', '-b', $host] : null,
+        'mtr6' => empty($mtr) ? ['mtr', '-6', '-c', '10', '-w', '-b', $host] : null,
+        'ping' => empty($ping) ? ['ping', '-4', '-c', '20', '-w', '25', $host] : null,
+        'ping6' => empty($ping) ? ['ping', '-6', '-c', '20', '-w', '25', $host] : null,
+        'traceroute' => empty($traceroute) ? ['traceroute', '-4', '-w', '1', '-q', '1', '-m', '30', $host] : null,
+        'traceroute6' => empty($traceroute) ? ['traceroute', '-6', '-w', '1', '-q', '1', '-m', '30', $host] : null,
     ];
 
-    if (!array_key_exists($cmd, $command_map) || empty($command_map[$cmd])) {
+    if (!array_key_exists($cmd, $command_map) || $command_map[$cmd] === null) {
         http_response_code(400);
-        echo "Error: Command not recognized or disabled.";
+        echo 'Error: Command not recognized or disabled.';
         exit;
     }
 
-    $full_command = sprintf($command_map[$cmd], escapeshellarg($host));
+    $command = $command_map[$cmd];
 
     echo "=======================================================================\n";
-    echo "|| Menjalankan: " . sanitize_output($cmd) . " " . sanitize_output($host) . "\n";
-    echo "|| Dari Server: " . sanitize_output($serverLocation);
+    echo '|| Menjalankan: ' . sanitize_output(command_to_display($command)) . "\n";
+    echo '|| Dari Server: ' . sanitize_output($serverLocation);
     echo "\n=======================================================================\n\n";
 
-    // Disable output buffering
-    if (ob_get_level())
-        ob_end_clean();
+    while (ob_get_level() > 0) {
+        @ob_end_flush();
+    }
+
     flush();
 
-    $descriptorspec = [0 => ["pipe", "r"], 1 => ["pipe", "w"], 2 => ["pipe", "w"]];
-    $process = proc_open($full_command, $descriptorspec, $pipes);
-
-    if (is_resource($process)) {
-        fclose($pipes[0]);
-        stream_set_blocking($pipes[1], false);
-        stream_set_blocking($pipes[2], false);
-
-        $timeout = 30; // 30 seconds timeout
-        $start_time = time();
-
-        while (true) {
-            $read = [$pipes[1], $pipes[2]];
-            $write = null;
-            $except = null;
-
-            if (stream_select($read, $write, $except, 1) > 0) {
-                foreach ($read as $pipe) {
-                    $output = fread($pipe, 16384);
-                    if ($output !== false && strlen($output) > 0) {
-                        echo sanitize_output($output);
-                        flush();
-                    }
-                }
-            }
-
-            $status = proc_get_status($process);
-            if (!$status['running']) {
-                // Process finished, read remaining output
-                $output = stream_get_contents($pipes[1]);
-                if ($output !== false && strlen($output) > 0)
-                    echo sanitize_output($output);
-
-                $stderr = stream_get_contents($pipes[2]);
-                if ($stderr !== false && strlen($stderr) > 0)
-                    echo "\n--- [STDERR] ---\n" . sanitize_output($stderr);
-
-                break;
-            }
-
-            if ((time() - $start_time) > $timeout) {
-                proc_terminate($process, 9);
-                echo "\n\n=======================================================================\n";
-                echo "|| Error: Proses melampaui batas waktu (30 detik) dan telah dihentikan.\n";
-                echo "=======================================================================\n";
-                break;
-            }
+    $result = run_process(
+        $command,
+        30,
+        static function (string $chunk): void {
+            echo sanitize_output($chunk);
+            flush();
         }
+    );
 
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
-    } else {
+    if (!$result['started']) {
         http_response_code(500);
-        echo "Error: Gagal mengeksekusi perintah pada server.";
+        echo 'Error: Gagal mengeksekusi perintah pada server.';
+        if ($result['stderr'] !== '') {
+            echo "\n" . sanitize_output($result['stderr']);
+        }
+        exit;
     }
+
+    if ($result['stderr'] !== '') {
+        echo "\n--- [STDERR] ---\n" . sanitize_output($result['stderr']);
+    }
+
+    if ($result['timed_out']) {
+        echo "\n\n=======================================================================\n";
+        echo "|| Error: Proses melampaui batas waktu (30 detik) dan telah dihentikan.\n";
+        echo "=======================================================================\n";
+    }
+
     exit;
 }
 
-$theme = "dark";
+$theme = 'dark';
 if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], true)) {
     $theme = $_COOKIE['theme'];
 }
@@ -475,11 +766,13 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<?php
 	// --- Basic vars (assume already defined earlier)
-	$appVersion = '1.0.4';
+	$appVersion = APP_VERSION;
 	$dateModified = date('Y-m-d'); // automatic (ISO 8601: YYYY-MM-DD)
 	$siteNameSafe = sanitize_output($siteName);
-	$siteUrlSafe = rtrim(sanitize_output($siteUrl), '/');
-	$scriptPathSafe = sanitize_output($_SERVER['SCRIPT_NAME'] ?? '/');
+	$siteUrlBase = rtrim((string) $siteUrl, '/');
+	$siteUrlSafe = sanitize_output($siteUrlBase);
+	$scriptPath = (string) ($_SERVER['SCRIPT_NAME'] ?? '/');
+	$scriptPathSafe = sanitize_output($scriptPath);
 
 	// Meta description (keep ~150 chars)
 	$metaDescription = sprintf(
@@ -495,16 +788,16 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	$metaKeywords = implode(', ', $keywords);
 
 	// Canonical URL
-	$canonical = $siteUrlSafe . $scriptPathSafe;
+	$canonical = $siteUrlBase . $scriptPath;
 
 	// Terms & Privacy (assumed path; adjust if different)
-	$termsUrl = $siteUrlSafe . '/terms';
-	$privacyUrl = $siteUrlSafe . '/privacy';
+	$termsUrl = $siteUrlBase . '/terms';
+	$privacyUrl = $siteUrlBase . '/privacy';
 
 	// Hreflang alternatives (add more if you host more locales)
 	$hreflangs = [
-		['href' => $siteUrlSafe . $scriptPathSafe, 'lang' => 'en'],
-		['href' => $siteUrlSafe . '/id' . $scriptPathSafe, 'lang' => 'id']
+		['href' => $siteUrlBase . $scriptPath, 'lang' => 'en'],
+		['href' => $siteUrlBase . '/id' . $scriptPath, 'lang' => 'id']
 	];
 	?>
 	<title><?= $siteNameSafe ?> — Looking Glass | Advanced Network Diagnostics</title>
@@ -520,7 +813,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="<?= $siteNameSafe ?> — Looking Glass | Network Diagnostics" />
 	<meta property="og:description" content="<?= htmlspecialchars($metaDescription, ENT_QUOTES, 'UTF-8') ?>" />
-	<meta property="og:url" content="<?= $canonical ?>" />
+	<meta property="og:url" content="<?= sanitize_output($canonical) ?>" />
 	<meta property="og:site_name" content="<?= $siteNameSafe ?> Network Tools" />
 	<meta property="og:image" content="<?= $siteUrlSafe ?>/social-share-image.png" />
 	<meta property="og:image:width" content="1200" />
@@ -551,7 +844,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
 	<link rel="manifest" href="/site.webmanifest">
 
-	<link rel="canonical" href="<?= $canonical ?>" />
+	<link rel="canonical" href="<?= sanitize_output($canonical) ?>" />
 
 	<!-- Hreflang alternates -->
 	<?php foreach ($hreflangs as $hf): ?>
@@ -590,7 +883,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 			'description' => $metaDescription,
 			'softwareVersion' => $appVersion,
 			'datePublished' => '2026-02-13',
-			'dateModified' => '2026-02-13',
+			'dateModified' => $dateModified,
 			'inLanguage' => ['en', 'id'],
 			'offers' => [
 				'@type' => 'Offer',
@@ -734,7 +1027,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 			'@context' => 'https://schema.org',
 			'@type' => 'FAQPage',
 			'mainEntity' => [
-				['@type' => 'Question', 'name' => 'What is Looking Glass network tool?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'A professional toolkit for network diagnostics including ping, traceroute, DNS, WHOIS, SSL, and port scanning.']],
+				['@type' => 'Question', 'name' => 'What is Looking Glass network tool?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'A professional toolkit for network diagnostics including ping, traceroute, MTR, DNS lookup, WHOIS, and host resolution.']],
 				['@type' => 'Question', 'name' => 'Does it support IPv6?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Yes, IPv4 and IPv6 are fully supported.']]
 			]
 		];
@@ -1107,7 +1400,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                         <form class="test-form ajax-test-form" data-test-type="<?php echo $tab['id']; ?>">
                                             <div class="form-group" style="flex-grow:2">
                                                 <label for="<?php echo $tab['id']; ?>_host"><?php echo $tab['id'] === 'whois' ? 'Domain or IP Address:' : 'Domain Name:'; ?></label>
-                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" required>
+                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" autocomplete="on" autocapitalize="none" spellcheck="false" required>
                                             </div>
                                             <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
                                                 <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
@@ -1124,7 +1417,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                         <form class="test-form network-test-form" data-test-type="<?php echo $tab['id']; ?>">
                                             <div class="form-group" style="flex-grow:2">
                                                 <label for="<?php echo $tab['id']; ?>_host">Host or IP Address:</label>
-                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="Example: 8.8.8.8 or google.com" required>
+                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="Example: 8.8.8.8 or google.com" autocomplete="on" autocapitalize="none" spellcheck="false" required>
                                             </div>
                                             <?php if (in_array($tab['id'], ['ping', 'traceroute', 'mtr'])): ?>
                                                 <div class="form-group" style="flex-grow:1">
@@ -1216,7 +1509,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-console.log("ALSYUNDAWY Looking Glass Network Tools CopyLeft © 2025-2026 | ALSYUNDAWY IT SOLUTION | AS696969 | DESIGN OLEH HARRY DERTIN SUTISNA ALSYUNDAWY | https://github.com/alsyundawy"),function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text(""),t.find(".ajax-result-container").html("")}))}();
+console.log("ALSYUNDAWY Looking Glass Network Tools CopyLeft © 2025-2026 | ALSYUNDAWY IT SOLUTION | AS696969 | DESIGN OLEH HARRY DERTIN SUTISNA ALSYUNDAWY | https://github.com/alsyundawy"),function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000;samesite=strict${location.protocol==="https:"?";secure":""}`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text(""),t.find(".ajax-result-container").html("")}))}();
 !function(){const e=t=>{const d=document.createElement("div");d.appendChild(document.createTextNode(t));return d.innerHTML},n={A:"fa-globe",AAAA:"fa-network-wired",NS:"fa-server",MX:"fa-envelope",SOA:"fa-database",TXT:"fa-file-lines"},l=document.getElementById("progressLoader");function renderW(d,c){let h="";if(d.error){c.innerHTML='<div class="alert-msg alert-error">'+e(d.error)+"</div>";return}if(d.parsed&&d.parsed.length){h+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Informasi WHOIS untuk '+e(d.host)+'</div><table class="whois-result-table"><tbody>';d.parsed.forEach(function(r){h+='<tr><td><i class="fas '+e(r.icon)+'"></i> '+e(r.key)+'<span class="whois-info-tip"><i class="fas fa-question-circle"></i> '+e(r.info)+"</span></td><td>"+e(r.value)+"</td></tr>"});h+='</tbody></table><button class="whois-raw-toggle" onclick="$(this).next().toggleClass(\'show\');$(this).find(\'i.fa-chevron-down,i.fa-chevron-up\').toggleClass(\'fa-chevron-down fa-chevron-up\')"><i class="fas fa-code"></i> Raw WHOIS Data <i class="fas fa-chevron-down"></i></button><pre class="whois-raw-box">'+e(d.raw||"")+"</pre></div>"}else{h+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Raw WHOIS untuk '+e(d.host)+'</div><pre class="whois-raw-box show">'+e(d.raw||"No data returned.")+"</pre></div>"}c.innerHTML=h}function renderD(d,c){let h="";if(d.error){c.innerHTML='<div class="alert-msg alert-error">'+e(d.error)+"</div>";return}const r=d.records||{},t=["A","AAAA","NS","MX","SOA","TXT"];let s=[];t.forEach(function(y){const i=n[y]||"fa-question",a=r[y]||[],o=a.length;s.push({type:y,count:o});h+='<div class="dns-result-card"><div class="dns-type-header"><i class="fas '+i+'"></i> '+y+' Records <span class="dns-type-badge">'+o+" record"+(o!==1?"s":"")+"</span></div>";if(o>0){h+='<table class="dns-record-table"><thead><tr><th><i class="fas fa-hashtag"></i> Name</th><th><i class="fas fa-clock"></i> TTL</th><th><i class="fas fa-tag"></i> Type</th><th><i class="fas fa-align-left"></i> Value</th></tr></thead><tbody>';a.forEach(function(p){h+="<tr><td>"+e(p.name)+"</td><td>"+e(p.ttl)+"</td><td>"+e(p.type)+"</td><td>"+e(p.value)+"</td></tr>"});h+="</tbody></table>"}else{h+='<div class="dns-no-records"><i class="fas fa-info-circle"></i> Tidak ada record '+y+" yang ditemukan</div>"}h+="</div>"});h+='<div class="dns-summary-bar">';s.forEach(function(p){h+='<span class="dns-summary-badge '+(p.count>0?"has-records":"no-records")+'"><i class="fas '+(n[p.type]||"fa-question")+'"></i> '+p.type+": "+p.count+"</span>"});h+="</div>";c.innerHTML=h}$(".ajax-test-form").on("submit",async function(v){v.preventDefault();const f=$(this),h=f.find("input[name=host]").val().trim();if(!h){alert("Host or domain required");f.find("input[name=host]").focus();return}const m=f.find("input[name=cmd]").val(),k=f.find("input[name=csrf]").val(),p=f.closest(".tab-pane"),s=p.find(".output-section"),r=p.find(".ajax-result-container");s.removeClass("show");s.find(".alert-error").hide();r.html('<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>Memproses '+e(m==="whois"?"WHOIS":"DNS")+" lookup untuk <strong>"+e(h)+"</strong>...</div>");s.addClass("show");l.classList.add("active");try{const d=new FormData;d.append("host",h);d.append("cmd",m);d.append("csrf",k);const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:d});l.classList.remove("active");if(a.status===403){alert(await a.text());location.reload();return}if(!a.ok){s.find(".alert-error").text((await a.text())||"Error occurred").show();r.html("");return}const j=await a.json();if(m==="whois")renderW(j,r[0]);else if(m==="dnslookup")renderD(j,r[0]);$("html,body").animate({scrollTop:s.offset().top-80},400)}catch(x){l.classList.remove("active");s.find(".alert-error").text("Error: "+(x.message||"Unknown error")).show();r.html("")}})}();
 </script>
 </body>
