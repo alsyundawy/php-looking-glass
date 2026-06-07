@@ -550,6 +550,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Catatan Perubahan
 
+### v1.0.5 - 2026-05-28
+
+- Memperkuat eksekusi perintah dengan mengganti string perintah berbasis shell menjadi array argv `proc_open()` untuk menghindari shell dan mengurangi risiko injeksi perintah.
+- Mengganti penggunaan `shell_exec()` di penangan WHOIS dan DNS Lookup dengan kontrol runner `proc_open()` dan penanganan batas waktu yang sama.
+- Menambahkan deteksi domain cookie yang lebih aman yang memotong port/bracket dan menghindari domain cookie sesi yang tidak valid pada localhost, alamat IP, dan pengaturan host:port.
+- Menambahkan header Content-Security-Policy dan Permissions-Policy yang kompatibel dengan CDN yang ada, inline CSS/JS, pencarian client-IP ipify, dan aset lokal.
+- Meningkatkan validasi host, perilaku batas waktu, penanganan stderr, pengkodean respons JSON, dan streaming output tanpa mengubah tata letak UI yang ada.
+- Mengurangi pemeriksaan ekstensi PHP hard-coded menjadi ekstensi yang sebenarnya digunakan oleh file ini.
+- Memperbarui softwareVersion/dateModified JSON-LD dan memperbaiki susunan kata fitur FAQ.
+
 ### v1.0.4 - 2026-05-05
 
 - Menambahkan tab WHOIS untuk pencarian WHOIS IP & domain dengan output yang mudah dibaca.
@@ -603,6 +613,8 @@ Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk be
 
 ## Lisensi
 
-## Lisensi MIT - Hak Cipta (c) 2026 Alsyundawy IT Solution
+Lisensi MIT - Hak Cipta (c) 2026 HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION
+
+> **Catatan:** Cantumkan kredit kepada penulis asli (HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION) apabila Anda menggunakan atau memodifikasi script ini.
 
 ![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")

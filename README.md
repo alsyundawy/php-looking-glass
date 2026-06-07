@@ -550,6 +550,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Changelog
 
+### v1.0.5 - 2026-05-28
+
+- Hardened command execution by replacing shell-based command strings with `proc_open()` argv arrays to bypass the shell and reduce command injection risk.
+- Replaced `shell_exec()` usage in WHOIS and DNS Lookup handlers with the same controlled `proc_open()` runner and timeout handling.
+- Added safer cookie-domain detection that strips ports/brackets and avoids invalid session cookie domains on localhost, IP addresses, and host:port setups.
+- Added Content-Security-Policy and Permissions-Policy headers compatible with the existing CDN, inline CSS/JS, ipify client-IP lookups, and local assets.
+- Improved host validation, timeout behavior, stderr handling, JSON response encoding, and output streaming without changing the existing UI layout.
+- Reduced hard PHP extension checks to extensions actually used by this file.
+- Updated JSON-LD softwareVersion/dateModified and fixed FAQ feature wording.
+
 ### v1.0.4 - 2026-05-05
 
 - Added WHOIS tab for IP & domain WHOIS lookup with human-readable output.
@@ -605,6 +615,8 @@ Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk be
 
 ## License
 
-## MIT License - Copyright (c) 2026 Alsyundawy IT Solution
+MIT License - Copyright (c) 2026 HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION
+
+> **Note:** Please include credit to the original author (HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION) if you use or modify this script.
 
 ![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")
