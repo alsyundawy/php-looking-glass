@@ -535,6 +535,57 @@ $iperfport = '5201';
 // Test files
 $testFiles = ['250MB', '500MB', '1GB'];
 
+// --- Download Test Handler (PHP stream generator, no physical files needed) ---
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download'])) {
+    $sizeMap = ['250MB' => 250, '500MB' => 500, '1GB' => 1024];
+    $requested = $_GET['download'];
+    $sizeMB = $sizeMap[$requested] ?? 0;
+    if ($sizeMB === 0) {
+        http_response_code(404);
+        die('File not found');
+    }
+
+    session_write_close();
+    ignore_user_abort(false);
+
+    while (ob_get_level() > 0) {
+        @ob_end_clean();
+    }
+
+    ob_implicit_flush(true);
+
+    @apache_setenv('no-gzip', '1');
+    @ini_set('zlib.output_compression', '0');
+
+    header('Content-Type: application/octet-stream');
+    header('Content-Length: ' . ($sizeMB * 1024 * 1024));
+    header('Content-Disposition: attachment; filename="' . $requested . '.bin"');
+    header('Content-Encoding: none');
+    header('Cache-Control: no-cache');
+    header('Pragma: no-cache');
+    header('X-Accel-Buffering: no');
+
+    $chunkSize = 262144;
+    $total = $sizeMB * 1024 * 1024;
+    $buf = str_repeat("a", $chunkSize);
+    $sent = 0;
+    while ($sent < $total) {
+        if (connection_aborted()) {
+            break;
+        }
+        $chunk = min($chunkSize, $total - $sent);
+        echo $chunk === $chunkSize ? $buf : substr($buf, 0, $chunk);
+        $sent += $chunk;
+        if ($sent % (10 * 1024 * 1024) === 0 || connection_aborted()) {
+            flush();
+            if (connection_aborted()) {
+                break;
+            }
+        }
+    }
+    exit;
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     header('Content-Type: text/plain; charset=utf-8');
     header('X-Accel-Buffering: no');
@@ -560,6 +611,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     if ($cmd === 'whois') {
         $result = run_process(['whois', $host], 30);
         $raw = trim($result['stdout'] . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''));
+
+        if (!$result['started']) {
+            json_response(['error' => 'WHOIS lookup failed: ' . $result['stderr']], 500);
+        }
 
         if ($raw === '') {
             json_response(['error' => 'WHOIS lookup failed or returned empty result.'], 500);
@@ -1104,7 +1159,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                     <div class="contact-info-mobile">
                         <a href="tel:+62-812-6969-6969" aria-label="Phone"><i class="fa-solid fa-phone-alt"></i></a>
                         <a href="mailto:info@alsyundawy.com" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
-                        <a href="https://wa.me/6281269696969" target="_blank" rel="noopener" aria-label="WhatsApp"><i
+                        <a href="https://wa.me/628126969696" target="_blank" rel="noopener" aria-label="WhatsApp"><i
                                 class="fa-brands fa-whatsapp"></i></a>
                         <a href="https://www.alsyundawy.com" target="_blank" rel="noopener" aria-label="Website"><i
                                 class="fa-solid fa-globe"></i></a>
@@ -1131,7 +1186,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 						</li>
 
 						<li class="nav-item">
-							<a href="https://wa.me/62-812-6969-6969" target="_blank" rel="noopener">
+							<a href="https://wa.me/628126969696" target="_blank" rel="noopener">
 								<i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span>
 							</a>
 						</li>
@@ -1282,8 +1337,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                     <?php
                                     if (!empty($testFiles) && is_array($testFiles)):
                                         foreach ($testFiles as $val) {
-                                            $url = (!empty($siteUrlv4) && !empty($siteUrlv6)) ? sanitize_output($siteUrlv4) : sanitize_output($siteUrl);
-                                            echo '<a href="' . $url . '/' . sanitize_output($val) . '.bin" class="btn-download-test"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
+                                            echo '<a href="?download=' . sanitize_output($val) . '" class="btn-download-test"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
                                         }
                                     endif;
                                     ?>
@@ -1295,8 +1349,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                     <?php
                                     if (!empty($testFiles) && is_array($testFiles)):
                                         foreach ($testFiles as $val) {
-                                            $url = (!empty($siteUrlv6) && !empty($siteUrlv4)) ? sanitize_output($siteUrlv6) : sanitize_output($siteUrl);
-                                            echo '<a href="' . $url . '/' . sanitize_output($val) . '.bin" class="btn-download-test"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
+                                            echo '<a href="?download=' . sanitize_output($val) . '" class="btn-download-test"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
                                         }
                                     endif;
                                     ?>
@@ -1488,7 +1541,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                         <div class="social-links">
                             <a href="https://github.com/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
-                            <a href="https://linkedin.com/alsyundawy" target="_blank" rel="noopener"
+                            <a href="https://linkedin.com/in/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
                             <a href="https://twitter.com/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
@@ -1504,7 +1557,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                 aria-label="Threads"><i class="fa-brands fa-threads"></i></a>
                             <a href="https://discord.gg/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
-                            <a href="https://telegram.org/alsyundawy" target="_blank" rel="noopener"
+                            <a href="https://t.me/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
                             <a href="https://wa.me/628126969696" target="_blank" rel="noopener"
                                 aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
