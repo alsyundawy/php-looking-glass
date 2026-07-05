@@ -15,7 +15,7 @@
 
 ## Stargazers over time
 
-[![Stargazers over time](https://starchart.cc/alsyundawy/php-looking-glass.svg?variant=dark)](https://starchart.cc/alsyundawy/php-looking-glass)
+[![Star History Chart](https://api.star-history.com/svg?repos=alsyundawy/php-looking-glass&type=Date)](https://star-history.com/#alsyundawy/php-looking-glass&Date)
 
 **A professional, lightweight, single-file PHP Looking Glass tool designed for network diagnostics. Fully compatible with IPv4 and IPv6, featuring a modern, responsive UI (Dark/Light mode) and utilizing standard system utilities.**
 
@@ -559,6 +559,7 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - **[Fix]** Cleaned up Markdown lint style warnings (`MD060/table-column-style`) in tables across documentation files by adding proper spacing to pipes.
 - **[Fix]** Removed leftover debug `console.log()` statements from the inline script block to ensure clean production console output.
 - **[Docs]** Updated system requirements documentation to detail required PHP extensions (filter, json), recommended extensions (mbstring), and necessary PHP functions (proc_open, stream_select, etc.) to prevent deployment troubleshooting issues.
+- **[Docs]** Replaced the broken `starchart.cc` star chart widget with a highly reliable alternative from `star-history.com` to keep the stargazers graph working.
 
 ---
 

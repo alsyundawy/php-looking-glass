@@ -15,7 +15,7 @@
 
 ## Statistik Bintang
 
-[![Stargazers over time](https://starchart.cc/alsyundawy/php-looking-glass.svg?variant=dark)](https://starchart.cc/alsyundawy/php-looking-glass)
+[![Star History Chart](https://api.star-history.com/svg?repos=alsyundawy/php-looking-glass&type=Date)](https://star-history.com/#alsyundawy/php-looking-glass&Date)
 
 **Sebuah alat Looking Glass PHP yang profesional, ringan, dan terdiri dari satu file, dirancang untuk diagnostik jaringan. Sepenuhnya kompatibel dengan IPv4 dan IPv6, dilengkapi antarmuka modern yang responsif (Mode Gelap/Terang) serta memanfaatkan utilitas sistem standar.**
 
@@ -559,6 +559,7 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - **[Perbaikan]** Merapikan peringatan gaya lint Markdown (`MD060/table-column-style`) pada tabel di dokumen panduan dengan menambahkan spasi yang tepat di sekitar karakter pipe (`|`).
 - **[Perbaikan]** Menghapus pernyataan debug `console.log()` yang tersisa dari blok skrip inline guna memastikan output konsol produksi yang bersih.
 - **[Dokumentasi]** Memperbarui dokumentasi persyaratan sistem untuk mencantumkan ekstensi PHP yang diperlukan (filter, json), ekstensi yang direkomendasikan (mbstring), dan fungsi PHP yang wajib aktif (proc_open, stream_select, dll.) untuk mencegah kendala saat pemasangan.
+- **[Dokumentasi]** Mengganti widget grafik bintang `starchart.cc` yang bermasalah dengan alternatif yang andal dari `star-history.com` agar grafik jumlah bintang repositori tetap berfungsi.
 
 ---
 

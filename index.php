@@ -137,6 +137,7 @@
  *   - Updated system requirements block comments to detail required PHP extensions (filter, json) and enabled functions (proc_open, stream_select, etc.).
  *   - Fixed table markdown formatting (MD060 lint style warnings) in README and README-ID.
  *   - Removed leftover console.log debug statements from production code.
+ *   - Replaced broken starchart.cc stargazer widget with star-history.com API in documentation.
  * 
  * ========================================================================
  */
