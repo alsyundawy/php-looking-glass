@@ -1,7 +1,8 @@
 # Alsyundawy PHP Looking Glass
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
-[![Latest Version](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.0.6-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
+[![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
 [![License](https://img.shields.io/github/license/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/blob/master/LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/issues)
@@ -22,16 +23,13 @@
 
 ## Features
 
-- **Network Diagnostics**: Ping, Traceroute, MTR (My Traceroute), WHOIS Lookup, and DNS Lookup.
-- **Performance Testing**:
-  - **Iperf3**: TCP, UDP, and Reverse mode support.
-  - **Download Tests**: Customizable binary file downloads.
-- **Modern UI**:
-  - Fully responsive design (Mobile to 4K).
-  - Dark/Light mode toggle.
-  - Real-time client IP detection.
-- **Security**: Strict input sanitization to prevent command injection.
-- **Easy Deployment**: Single PHP file, no database required.
+| Category | Details |
+|---|---|
+| 🌐 **Network Diagnostics** | Ping (ICMP), Traceroute, MTR, Host, WHOIS Lookup, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
+| ⚡ **Performance Testing** | Iperf3 (TCP/UDP/Reverse), Customizable binary download tests |
+| 🎨 **Modern UI** | Fully responsive (Mobile to 4K), Dark/Light mode toggle, Real-time client IP detection |
+| 🔒 **Security** | CSRF protection, `proc_open()` argv (no shell interpolation), CSP headers, strict input validation |
+| 🚀 **Easy Deployment** | Single PHP file · No database · No Composer · PHP 8.1+ |
 
 ## Requirements
 
@@ -487,7 +485,7 @@ Find the `<div class="social-links">` section in the footer (~line 1013) and upd
 | Threads | `https://threads.net/alsyundawy` |
 | Discord | `https://discord.gg/alsyundawy` |
 | Telegram | `https://telegram.org/alsyundawy` |
-| WhatsApp | `https://wa.me/+62-812-6969-6969` |
+| WhatsApp | `https://wa.me/628126969696` *(numeric only — no `+` or `-`)* |
 
 ## Image & Logo Customization
 
@@ -550,7 +548,22 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Changelog
 
-### v1.0.5 - 2026-05-28
+### v1.0.6 — 2026-07-05 🔧 Bug Fix & Security Polish
+
+> **Upgrade recommended** — this release fixes a functional bug that corrupted terminal output display in all browsers.
+
+- **[Fix]** Removed `sanitize_output()` (`htmlspecialchars`) from `proc_open` streaming callbacks. Output is delivered as `Content-Type: text/plain` and rendered via JavaScript `createTextNode()`, which is inherently XSS-safe. The previous double-encoding caused characters like `<`, `>`, `&` to display literally as `&lt;`, `&gt;`, `&amp;` in ping/traceroute/mtr/host results.
+- **[Fix]** Iperf3 command display now uses `$iperfport` variable (was hardcoded `5201` in 4 HTML locations); change the port once in config, it reflects everywhere.
+- **[Fix]** WhatsApp `wa.me` link in footer corrected to numeric format (`wa.me/628126969696`); the previous `+62-812-...` format with dashes is not accepted by the WhatsApp link API.
+- **[Fix]** `bgp.he.net` footer link upgraded from HTTP to HTTPS.
+- **[Fix]** HTML5 semantics: second `<header class="site-header">` element changed to `<section aria-label="Site hero">` — the HTML5 spec permits only one `<header>` landmark per sectioning context.
+- **[Fix]** Removed non-existent `favicon.png` and duplicate `favicon-32x32` reference from `<head>`. Removed 7 `apple-touch-icon` sizes (152, 144, 120, 114, 76, 72, 60, 57 px) that have no corresponding file in the repository.
+- **[Security]** Applied `sanitize_output()` to all `$tabs` array data echoed into HTML attributes and element content (defence-in-depth; data is static but escaping is now consistent).
+- **[Security]** Removed `console.log()` banner from production JavaScript — prevented accidental info disclosure in browser devtools.
+
+---
+
+### v1.0.5 — 2026-05-28 🛡️ Security Hardening
 
 - Hardened command execution by replacing shell-based command strings with `proc_open()` argv arrays to bypass the shell and reduce command injection risk.
 - Replaced `shell_exec()` usage in WHOIS and DNS Lookup handlers with the same controlled `proc_open()` runner and timeout handling.
@@ -558,19 +571,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - Added Content-Security-Policy and Permissions-Policy headers compatible with the existing CDN, inline CSS/JS, ipify client-IP lookups, and local assets.
 - Improved host validation, timeout behavior, stderr handling, JSON response encoding, and output streaming without changing the existing UI layout.
 - Reduced hard PHP extension checks to extensions actually used by this file.
-- Updated JSON-LD softwareVersion/dateModified and fixed FAQ feature wording.
+- Updated JSON-LD `softwareVersion`/`dateModified` and fixed FAQ feature wording.
 
-### v1.0.4 - 2026-05-05
+### v1.0.4 — 2026-05-05 ✨ New Features
 
-- Added WHOIS tab for IP & domain WHOIS lookup with human-readable output.
-- Added DNS Lookup tab (A, AAAA, NS, MX, SOA, TXT) with modern responsive table display and Font Awesome icons per record type.
+- Added **WHOIS** tab for IP & domain WHOIS lookup with human-readable parsed output.
+- Added **DNS Lookup** tab (A, AAAA, NS, MX, SOA, TXT) with modern responsive table display and Font Awesome icons per record type.
 - WHOIS results parsed and presented in user-friendly format for non-technical users.
 - DNS Lookup results rendered as structured tables per record type.
 - Both new tabs use AJAX with CSRF protection, consistent with existing tabs.
 - Updated requirements to include `whois` and `dig` system utilities.
 - Minified WHOIS & DNS Lookup CSS and JavaScript.
 
-### v1.0.3 - 2026-03-05
+### v1.0.3 — 2026-03-05 🐛 Bug Fixes
 
 - Fixed undefined `$script_name` variable; now uses `$_SERVER['SCRIPT_NAME']`.
 - Fixed incorrect `date()` format from `'YY-mm-dd'` to `'Y-m-d'` (ISO 8601).
@@ -580,22 +593,22 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - Removed duplicate changelog entry and blank lines in doc comment.
 - Code review and optimization pass.
 
-### v1.0.2 - 2026-02-18
+### v1.0.2 — 2026-02-18 🎨 UI Polish
 
 - Updated hero background in light mode to match dark mode style.
 - Updated `lg-logo.webp` and `hero-lg.webp`.
-- Optimize CSS and JS Minify.
+- CSS and JavaScript minification optimization.
 
-### v1.0.1 - 2026-02-17
+### v1.0.1 — 2026-02-17 🔒 Security
 
 - Implemented Session Validity Check (CSRF Token) on POST requests.
 - Added bilingual error handling (ID/EN) for timed-out sessions.
-- Enhancements and optimization image webp.
-- Security enhancements and optimization.
+- WebP image optimization.
+- Security enhancements and code optimization.
 
-### v1.0.0 - 2026-02-16
+### v1.0.0 — 2026-02-16 🚀 Initial Release
 
-- Initial Release.
+- Initial release of Alsyundawy PHP Looking Glass.
 - Full Looking Glass functionality with optimized 3-column layout.
 - Integrated Iperf3 and Download Test features.
 
@@ -615,8 +628,10 @@ Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk be
 
 ## License
 
-MIT License - Copyright (c) 2026 HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION
+MIT License — Copyright © 2026 **HARRY DS ALSYUNDAWY** — ALSYUNDAWY IT SOLUTION
 
-> **Note:** Please include credit to the original author (HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION) if you use or modify this script.
+> **Note:** Please retain credit to the original author (HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION) if you use or modify this script. Attribution is appreciated but not legally required under the MIT License.
+
+---
 
 ![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")

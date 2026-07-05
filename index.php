@@ -5,7 +5,7 @@
  * ========================================================================
  * 
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.0.5
+ * @version     : 1.0.6
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -98,14 +98,32 @@
  *     encoding, and output streaming without changing the existing UI layout.
  *   - Reduced hard PHP extension checks to extensions actually used by this file.
  *   - Updated JSON-LD softwareVersion/dateModified and fixed FAQ feature wording.
+ *
+ * v1.0.6 - 2026-07-05
+ *   - Fixed double-escaping bug in streaming terminal output: removed
+ *     sanitize_output() from proc_open stdout/stderr callbacks; JS already
+ *     uses createTextNode() which is XSS-safe without HTML entities.
+ *   - Fixed iperf command display hardcoded port '5201' now uses $iperfport
+ *     variable consistently across IPv4 and IPv6 sections.
+ *   - Fixed wa.me WhatsApp link format in footer (removed +/- characters;
+ *     wa.me requires plain numeric format: wa.me/628126969696).
+ *   - Fixed bgp.he.net link from HTTP to HTTPS in footer.
+ *   - Fixed HTML semantics: second <header> (site-header) changed to <section>
+ *     to comply with HTML5 spec (only one <header> landmark per section).
+ *   - Fixed non-existent favicon.png and duplicate favicon-32x32 in <head>.
+ *   - Fixed apple-touch-icon references for non-standard sizes that do not
+ *     exist in the repository (kept only the existing apple-touch-icon.png).
+ *   - Applied sanitize_output() to all $tabs data echoed into HTML for
+ *     defence-in-depth XSS protection.
+ *   - Removed console.log() from production JavaScript to prevent info leakage.
  * 
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.0.5';
-const APP_UPDATED = '2026-05-28';
+const APP_VERSION = '1.0.6';
+const APP_UPDATED = '2026-07-05';
 
 function error_die(string $title, string $message): never
 {
@@ -726,8 +744,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $result = run_process(
         $command,
         30,
+        // NOTE: Output is sent as Content-Type: text/plain and consumed by
+        // JavaScript via createTextNode(), which is inherently XSS-safe.
+        // Do NOT add sanitize_output() here — it would double-encode entities
+        // (e.g. '<' becomes '&amp;lt;') and corrupt terminal output display.
         static function (string $chunk): void {
-            echo sanitize_output($chunk);
+            echo $chunk;
             flush();
         }
     );
@@ -736,13 +758,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         http_response_code(500);
         echo 'Error: Gagal mengeksekusi perintah pada server.';
         if ($result['stderr'] !== '') {
-            echo "\n" . sanitize_output($result['stderr']);
+            echo "\n" . $result['stderr'];
         }
         exit;
     }
 
     if ($result['stderr'] !== '') {
-        echo "\n--- [STDERR] ---\n" . sanitize_output($result['stderr']);
+        echo "\n--- [STDERR] ---\n" . $result['stderr'];
     }
 
     if ($result['timed_out']) {
@@ -826,22 +848,13 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<meta name="twitter:image" content="<?= $siteUrlSafe ?>/social-share-image.png">
 
 	<!-- Favicons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-	<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="apple-touch-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="apple-touch-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="apple-touch-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="apple-touch-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="apple-touch-icon-57x57.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+	<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+	<link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
 	<link rel="manifest" href="/site.webmanifest">
 
 	<link rel="canonical" href="<?= sanitize_output($canonical) ?>" />
@@ -1099,15 +1112,15 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                 </div>
             </div>
         </header>
-        <header class="site-header">
+        <section class="site-header" aria-label="Site hero">
             <div class="header-content">
                 <img src="lg-logo.webp" alt="ALSYUNDAWY IT SOLUTION" width="220">
                 <h1>
                     <?php echo sanitize_output($siteName); ?>
                 </h1>
-                <p>Enterprise Network Diagnostics & Monitoring Solutions</p>
+                <p>Enterprise Network Diagnostics &amp; Monitoring Solutions</p>
             </div>
-        </header>
+        </section>
 			<nav class="main-nav" aria-label="Main navigation">
 				<div class="container d-flex align-items-center">
 					<ul class="nav-menu flex-grow-1">
@@ -1247,17 +1260,13 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                 <h3 class="info-card-title"><i class="fas fa-tachometer-alt"></i>IPERF TEST</h3>
                                 <?php if (!empty($ipv4)): ?>
                                     <h5 style="font-weight:700;margin-top:.8rem;font-size:.85rem">IPv4</h5>
-                                    <pre
-                                        class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv4); ?> -p 5201 -P 4</pre>
-                                    <pre
-                                        class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv4); ?> -p 5201 -P 4 -R</pre>
+                                    <pre class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv4); ?> -p <?php echo sanitize_output($iperfport); ?> -P 4</pre>
+                                    <pre class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv4); ?> -p <?php echo sanitize_output($iperfport); ?> -P 4 -R</pre>
                                 <?php endif; ?>
                                 <?php if (!empty($ipv6)): ?>
                                     <h5 style="font-weight:700;margin-top:.8rem;font-size:.85rem">IPv6</h5>
-                                    <pre
-                                        class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv6); ?> -p 5201 -P 4</pre>
-                                    <pre
-                                        class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv6); ?> -p 5201 -P 4 -R</pre>
+                                    <pre class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv6); ?> -p <?php echo sanitize_output($iperfport); ?> -P 4</pre>
+                                    <pre class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv6); ?> -p <?php echo sanitize_output($iperfport); ?> -P 4 -R</pre>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -1372,17 +1381,17 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 
                                     <li class="nav-item" role="presentation">
                                         <?php if (isset($tab['link'])): ?>
-                                            <a href="<?php echo $tab['link']; ?>"
+                                            <a href="<?php echo sanitize_output($tab['link']); ?>"
                                                 class="nav-link <?php echo $tab['active'] ? 'active' : ''; ?>">
-                                                <i class="fas <?php echo $tab['icon']; ?>"></i>
-                                                <?php echo $tab['label']; ?>
+                                                <i class="fas <?php echo sanitize_output($tab['icon']); ?>"></i>
+                                                <?php echo sanitize_output($tab['label']); ?>
                                             </a>
                                         <?php else: ?>
                                             <button class="nav-link <?php echo $tab['active'] ? 'active' : ''; ?>"
-                                                id="<?php echo $tab['id']; ?>-tab" data-bs-toggle="tab"
-                                                data-bs-target="#<?php echo $tab['id']; ?>-panel" type="button" role="tab">
-                                                <i class="fas <?php echo $tab['icon']; ?>"></i>
-                                                <?php echo $tab['label']; ?>
+                                                id="<?php echo sanitize_output($tab['id']); ?>-tab" data-bs-toggle="tab"
+                                                data-bs-target="#<?php echo sanitize_output($tab['id']); ?>-panel" type="button" role="tab">
+                                                <i class="fas <?php echo sanitize_output($tab['icon']); ?>"></i>
+                                                <?php echo sanitize_output($tab['label']); ?>
                                             </button>
                                         <?php endif; ?>
                                     </li>
@@ -1391,38 +1400,38 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                             <div class="tab-content" id="networkTestTabsContent">
                                 <?php foreach ($tabs as $tab): ?>
                                     <div class="tab-pane fade <?php echo $tab['active'] ? 'show active' : ''; ?>"
-                                        id="<?php echo $tab['id']; ?>-panel" role="tabpanel">
+                                        id="<?php echo sanitize_output($tab['id']); ?>-panel" role="tabpanel">
                                         <div class="tab-section-header">
-                                            <h4><i class="fas <?php echo $tab['icon']; ?>"></i> <?php echo $tab['label']; ?></h4>
-                                            <p><?php echo $tab['desc'] ?? ''; ?></p>
+                                            <h4><i class="fas <?php echo sanitize_output($tab['icon']); ?>"></i> <?php echo sanitize_output($tab['label']); ?></h4>
+                                            <p><?php echo sanitize_output($tab['desc'] ?? ''); ?></p>
                                         </div>
                                         <?php if (($tab['type'] ?? '') === 'ajax'): ?>
-                                        <form class="test-form ajax-test-form" data-test-type="<?php echo $tab['id']; ?>">
+                                        <form class="test-form ajax-test-form" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="form-group" style="flex-grow:2">
-                                                <label for="<?php echo $tab['id']; ?>_host"><?php echo $tab['id'] === 'whois' ? 'Domain or IP Address:' : 'Domain Name:'; ?></label>
-                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" autocomplete="on" autocapitalize="none" spellcheck="false" required>
+                                                <label for="<?php echo sanitize_output($tab['id']); ?>_host"><?php echo $tab['id'] === 'whois' ? 'Domain or IP Address:' : 'Domain Name:'; ?></label>
+                                                <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" autocomplete="on" autocapitalize="none" spellcheck="false" required>
                                             </div>
                                             <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
                                                 <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
-                                                <input type="hidden" name="cmd" value="<?php echo $tab['id']; ?>">
-                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i>Run <?php echo $tab['label']; ?></button>
+                                                <input type="hidden" name="cmd" value="<?php echo sanitize_output($tab['id']); ?>">
+                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i>Run <?php echo sanitize_output($tab['label']); ?></button>
                                                 <button type="button" class="action-btn action-btn-reset reset-tab-btn"><i class="fas fa-eraser"></i>Reset</button>
                                             </div>
                                         </form>
-                                        <div class="output-section" data-output-for="<?php echo $tab['id']; ?>">
+                                        <div class="output-section" data-output-for="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="alert-msg alert-error" style="display:none"></div>
-                                            <div class="ajax-result-container" id="<?php echo $tab['id']; ?>-result"></div>
+                                            <div class="ajax-result-container" id="<?php echo sanitize_output($tab['id']); ?>-result"></div>
                                         </div>
                                         <?php else: ?>
-                                        <form class="test-form network-test-form" data-test-type="<?php echo $tab['id']; ?>">
+                                        <form class="test-form network-test-form" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="form-group" style="flex-grow:2">
-                                                <label for="<?php echo $tab['id']; ?>_host">Host or IP Address:</label>
-                                                <input type="text" name="host" id="<?php echo $tab['id']; ?>_host" placeholder="Example: 8.8.8.8 or google.com" autocomplete="on" autocapitalize="none" spellcheck="false" required>
+                                                <label for="<?php echo sanitize_output($tab['id']); ?>_host">Host or IP Address:</label>
+                                                <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="Example: 8.8.8.8 or google.com" autocomplete="on" autocapitalize="none" spellcheck="false" required>
                                             </div>
                                             <?php if (in_array($tab['id'], ['ping', 'traceroute', 'mtr'])): ?>
                                                 <div class="form-group" style="flex-grow:1">
-                                                    <label for="<?php echo $tab['id']; ?>_ipv">IP Version:</label>
-                                                    <select name="ipversion" id="<?php echo $tab['id']; ?>_ipv">
+                                                    <label for="<?php echo sanitize_output($tab['id']); ?>_ipv">IP Version:</label>
+                                                    <select name="ipversion" id="<?php echo sanitize_output($tab['id']); ?>_ipv">
                                                         <?php if (!empty($ipv4)): ?>
                                                             <option value="4">IPv4</option>
                                                         <?php endif; ?>
@@ -1434,12 +1443,12 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                             <?php endif; ?>
                                             <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
                                                 <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
-                                                <input type="hidden" name="cmd" value="<?php echo $tab['id']; ?>">
+                                                <input type="hidden" name="cmd" value="<?php echo sanitize_output($tab['id']); ?>">
                                                 <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i>Run Test</button>
                                                 <button type="button" class="action-btn action-btn-reset reset-tab-btn"><i class="fas fa-eraser"></i>Reset</button>
                                             </div>
                                         </form>
-                                        <div class="output-section" data-output-for="<?php echo $tab['id']; ?>">
+                                        <div class="output-section" data-output-for="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="alert-msg alert-error" style="display:none"></div>
                                             <pre class="output-box"></pre>
                                         </div>
@@ -1469,7 +1478,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 						<p>
 							INFO:
 							<a href="https://stat.ripe.net/AS696969" target="_blank" rel="noopener">RIPESTAT</a> |
-							<a href="http://bgp.he.net/AS696969" target="_blank" rel="noopener">HE.NET</a> |
+							<a href="https://bgp.he.net/AS696969" target="_blank" rel="noopener">HE.NET</a> |
 							<a href="https://bgp.tools/as/696969" target="_blank" rel="noopener">BGP.Tools</a> |
 							<a href="https://www.robtex.com/as/AS696969.html" target="_blank" rel="noopener">ROBTEX</a> |
 							<a href="http://www.peeringdb.com/view.php?asn=696969" target="_blank" rel="noopener">PEERINGDB</a> |
@@ -1497,7 +1506,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                 aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
                             <a href="https://telegram.org/alsyundawy" target="_blank" rel="noopener"
                                 aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
-                            <a href="https://wa.me/+62-812-6969-6969" target="_blank" rel="noopener"
+                            <a href="https://wa.me/628126969696" target="_blank" rel="noopener"
                                 aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
                         </div>
                     </div>
@@ -1509,7 +1518,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 	<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-console.log("ALSYUNDAWY Looking Glass Network Tools CopyLeft © 2025-2026 | ALSYUNDAWY IT SOLUTION | AS696969 | DESIGN OLEH HARRY DERTIN SUTISNA ALSYUNDAWY | https://github.com/alsyundawy"),function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000;samesite=strict${location.protocol==="https:"?";secure":""}`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text(""),t.find(".ajax-result-container").html("")}))}();
+!function(){const t=document.documentElement,e=document.getElementById("themeToggle"),o=e.querySelector("i"),n=document.getElementById("scrollToTop"),s=document.getElementById("progressLoader"),a=()=>{const t="dark"===document.documentElement.getAttribute("data-theme");o.classList.toggle("fa-sun",t),o.classList.toggle("fa-moon",!t)};e.addEventListener("click",(()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000;samesite=strict${location.protocol==="https:"?";secure":""}`,a()})),window.addEventListener("scroll",(()=>{n.style.display=window.scrollY>300?"block":"none"})),n.addEventListener("click",(t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})})),a();const r=async(t,e,o)=>{try{const o=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!o.ok)throw new Error("Network error");const n=await o.json();document.getElementById(t).textContent=n.ip}catch(e){document.getElementById(t).textContent=o}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",(async function(t){t.preventDefault();const e=$(this),o=e.find("input[name=host]").val().trim();if(!o)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let n=e.find("input[name=cmd]").val();const a=e.find("select[name=ipversion]");a.length&&"6"===a.val()&&(n+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),s.classList.add("active");const c=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(n);try{const t=new FormData;t.append("host",o),t.append("cmd",n),t.append("csrf",e.find("input[name=csrf]").val());const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(s.classList.remove("active"),403===a.status){const t=await a.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),c){const t=a.body.getReader(),e=new TextDecoder;for(;;){const{done:o,value:n}=await t.read();if(o)break;const s=e.decode(n,{stream:!0});i.append(document.createTextNode(s)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await a.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){s.classList.remove("active");let e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}})),$(".reset-tab-btn").on("click",(function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text(""),t.find(".ajax-result-container").html("")}))}();
 !function(){const e=t=>{const d=document.createElement("div");d.appendChild(document.createTextNode(t));return d.innerHTML},n={A:"fa-globe",AAAA:"fa-network-wired",NS:"fa-server",MX:"fa-envelope",SOA:"fa-database",TXT:"fa-file-lines"},l=document.getElementById("progressLoader");function renderW(d,c){let h="";if(d.error){c.innerHTML='<div class="alert-msg alert-error">'+e(d.error)+"</div>";return}if(d.parsed&&d.parsed.length){h+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Informasi WHOIS untuk '+e(d.host)+'</div><table class="whois-result-table"><tbody>';d.parsed.forEach(function(r){h+='<tr><td><i class="fas '+e(r.icon)+'"></i> '+e(r.key)+'<span class="whois-info-tip"><i class="fas fa-question-circle"></i> '+e(r.info)+"</span></td><td>"+e(r.value)+"</td></tr>"});h+='</tbody></table><button class="whois-raw-toggle" onclick="$(this).next().toggleClass(\'show\');$(this).find(\'i.fa-chevron-down,i.fa-chevron-up\').toggleClass(\'fa-chevron-down fa-chevron-up\')"><i class="fas fa-code"></i> Raw WHOIS Data <i class="fas fa-chevron-down"></i></button><pre class="whois-raw-box">'+e(d.raw||"")+"</pre></div>"}else{h+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Raw WHOIS untuk '+e(d.host)+'</div><pre class="whois-raw-box show">'+e(d.raw||"No data returned.")+"</pre></div>"}c.innerHTML=h}function renderD(d,c){let h="";if(d.error){c.innerHTML='<div class="alert-msg alert-error">'+e(d.error)+"</div>";return}const r=d.records||{},t=["A","AAAA","NS","MX","SOA","TXT"];let s=[];t.forEach(function(y){const i=n[y]||"fa-question",a=r[y]||[],o=a.length;s.push({type:y,count:o});h+='<div class="dns-result-card"><div class="dns-type-header"><i class="fas '+i+'"></i> '+y+' Records <span class="dns-type-badge">'+o+" record"+(o!==1?"s":"")+"</span></div>";if(o>0){h+='<table class="dns-record-table"><thead><tr><th><i class="fas fa-hashtag"></i> Name</th><th><i class="fas fa-clock"></i> TTL</th><th><i class="fas fa-tag"></i> Type</th><th><i class="fas fa-align-left"></i> Value</th></tr></thead><tbody>';a.forEach(function(p){h+="<tr><td>"+e(p.name)+"</td><td>"+e(p.ttl)+"</td><td>"+e(p.type)+"</td><td>"+e(p.value)+"</td></tr>"});h+="</tbody></table>"}else{h+='<div class="dns-no-records"><i class="fas fa-info-circle"></i> Tidak ada record '+y+" yang ditemukan</div>"}h+="</div>"});h+='<div class="dns-summary-bar">';s.forEach(function(p){h+='<span class="dns-summary-badge '+(p.count>0?"has-records":"no-records")+'"><i class="fas '+(n[p.type]||"fa-question")+'"></i> '+p.type+": "+p.count+"</span>"});h+="</div>";c.innerHTML=h}$(".ajax-test-form").on("submit",async function(v){v.preventDefault();const f=$(this),h=f.find("input[name=host]").val().trim();if(!h){alert("Host or domain required");f.find("input[name=host]").focus();return}const m=f.find("input[name=cmd]").val(),k=f.find("input[name=csrf]").val(),p=f.closest(".tab-pane"),s=p.find(".output-section"),r=p.find(".ajax-result-container");s.removeClass("show");s.find(".alert-error").hide();r.html('<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>Memproses '+e(m==="whois"?"WHOIS":"DNS")+" lookup untuk <strong>"+e(h)+"</strong>...</div>");s.addClass("show");l.classList.add("active");try{const d=new FormData;d.append("host",h);d.append("cmd",m);d.append("csrf",k);const a=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:d});l.classList.remove("active");if(a.status===403){alert(await a.text());location.reload();return}if(!a.ok){s.find(".alert-error").text((await a.text())||"Error occurred").show();r.html("");return}const j=await a.json();if(m==="whois")renderW(j,r[0]);else if(m==="dnslookup")renderD(j,r[0]);$("html,body").animate({scrollTop:s.offset().top-80},400)}catch(x){l.classList.remove("active");s.find(".alert-error").text("Error: "+(x.message||"Unknown error")).show();r.html("")}})}();
 </script>
 </body>

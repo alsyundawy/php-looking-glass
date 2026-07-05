@@ -1,13 +1,14 @@
 # Alsyundawy PHP Looking Glass
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
-[![Latest Version](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
-[![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
-[![License](https://img.shields.io/github/license/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/blob/master/LICENSE)
+[![Versi](https://img.shields.io/badge/versi-1.0.6-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
+[![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
+[![Lisensi](https://img.shields.io/github/license/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/blob/master/LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/pulls)
-[![Donate with PayPal](https://img.shields.io/badge/PayPal-donate-orange)](https://www.paypal.me/alsyundawy)
-[![Sponsor with GitHub](https://img.shields.io/badge/GitHub-sponsor-orange)](https://github.com/sponsors/alsyundawy)
+[![Donasi via PayPal](https://img.shields.io/badge/PayPal-donate-orange)](https://www.paypal.me/alsyundawy)
+[![Sponsor via GitHub](https://img.shields.io/badge/GitHub-sponsor-orange)](https://github.com/sponsors/alsyundawy)
 [![GitHub Stars](https://img.shields.io/github/stars/alsyundawy/php-looking-glass?style=social)](https://github.com/alsyundawy/php-looking-glass/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/alsyundawy/php-looking-glass?style=social)](https://github.com/alsyundawy/php-looking-glass/network/members)
 [![GitHub Contributors](https://img.shields.io/github/contributors/alsyundawy/php-looking-glass?style=social)](https://github.com/alsyundawy/php-looking-glass/graphs/contributors)
@@ -22,16 +23,13 @@
 
 ## Fitur
 
-- **Diagnostik Jaringan**: Ping, Traceroute, MTR (My Traceroute), Pencarian WHOIS, dan Pencarian DNS.
-- **Pengujian Performa**:
-  - **Iperf3**: Dukungan mode TCP, UDP, dan Reverse.
-  - **Uji Unduhan**: Unduhan file biner yang dapat dikustomisasi.
-- **Antarmuka Modern**:
-  - Desain responsif penuh (Mobile hingga 4K).
-  - Tombol mode Gelap/Terang.
-  - Deteksi IP klien secara real-time.
-- **Keamanan**: Sanitasi input ketat untuk mencegah injeksi perintah.
-- **Mudah Dipasang**: Satu file PHP, tanpa memerlukan database.
+| Kategori | Detail |
+|---|---|
+| 🌐 **Diagnostik Jaringan** | Ping (ICMP), Traceroute, MTR, Host, Pencarian WHOIS, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
+| ⚡ **Pengujian Performa** | Iperf3 (TCP/UDP/Reverse), Uji unduhan file biner yang dapat dikustomisasi |
+| 🎨 **Antarmuka Modern** | Responsif penuh (Mobile hingga 4K), Toggle mode Gelap/Terang, Deteksi IP klien real-time |
+| 🔒 **Keamanan** | Perlindungan CSRF, `proc_open()` argv (tanpa interpolasi shell), header CSP, validasi input ketat |
+| 🚀 **Mudah Dipasang** | Satu file PHP · Tanpa database · Tanpa Composer · PHP 8.1+ |
 
 ## Persyaratan
 
@@ -487,7 +485,7 @@ Temukan bagian `<div class="social-links">` di footer (~baris 1013) dan perbarui
 | Threads | `https://threads.net/alsyundawy` |
 | Discord | `https://discord.gg/alsyundawy` |
 | Telegram | `https://telegram.org/alsyundawy` |
-| WhatsApp | `https://wa.me/+62-812-6969-6969` |
+| WhatsApp | `https://wa.me/628126969696` *(hanya angka — tanpa `+` atau `-`)* |
 
 ## Kustomisasi Gambar dan Logo
 
@@ -550,7 +548,22 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Catatan Perubahan
 
-### v1.0.5 - 2026-05-28
+### v1.0.6 — 2026-07-05 🔧 Perbaikan Bug & Keamanan
+
+> **Pembaruan dianjurkan** — rilis ini memperbaiki bug fungsional yang menyebabkan tampilan output terminal rusak di semua browser.
+
+- **[Fix]** Dihapus `sanitize_output()` (`htmlspecialchars`) dari callback streaming `proc_open`. Output dikirim sebagai `Content-Type: text/plain` dan dirender oleh JavaScript melalui `createTextNode()` yang secara bawaan aman dari XSS. Sebelumnya, double-encoding menyebabkan karakter seperti `<`, `>`, `&` tampil secara literal sebagai `&lt;`, `&gt;`, `&amp;` pada hasil ping/traceroute/mtr/host.
+- **[Fix]** Tampilan perintah Iperf3 kini menggunakan variabel `$iperfport` (sebelumnya hardcoded `5201` di 4 lokasi HTML); ubah port sekali di konfigurasi, langsung berlaku di semua tempat.
+- **[Fix]** Tautan WhatsApp `wa.me` di footer diperbaiki ke format numerik (`wa.me/628126969696`); format `+62-812-...` dengan tanda hubung sebelumnya tidak diterima oleh API tautan WhatsApp.
+- **[Fix]** Tautan `bgp.he.net` di footer ditingkatkan dari HTTP ke HTTPS.
+- **[Fix]** Semantik HTML5: elemen `<header class="site-header">` kedua diubah menjadi `<section aria-label="Site hero">` — spesifikasi HTML5 hanya mengizinkan satu elemen `<header>` landmark per konteks seksi.
+- **[Fix]** Dihapus referensi `favicon.png` yang tidak ada dan duplikat `favicon-32x32` dari `<head>`. Dihapus 7 ukuran `apple-touch-icon` (152, 144, 120, 114, 76, 72, 60, 57 px) yang tidak memiliki file di repositori.
+- **[Keamanan]** Diterapkan `sanitize_output()` pada semua data array `$tabs` yang di-echo ke atribut dan konten elemen HTML (defence-in-depth; data bersifat statis namun escaping kini konsisten).
+- **[Keamanan]** Dihapus banner `console.log()` dari JavaScript production — mencegah kebocoran informasi di DevTools browser.
+
+---
+
+### v1.0.5 — 2026-05-28 🛡️ Penguatan Keamanan
 
 - Memperkuat eksekusi perintah dengan mengganti string perintah berbasis shell menjadi array argv `proc_open()` untuk menghindari shell dan mengurangi risiko injeksi perintah.
 - Mengganti penggunaan `shell_exec()` di penangan WHOIS dan DNS Lookup dengan kontrol runner `proc_open()` dan penanganan batas waktu yang sama.
@@ -558,19 +571,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - Menambahkan header Content-Security-Policy dan Permissions-Policy yang kompatibel dengan CDN yang ada, inline CSS/JS, pencarian client-IP ipify, dan aset lokal.
 - Meningkatkan validasi host, perilaku batas waktu, penanganan stderr, pengkodean respons JSON, dan streaming output tanpa mengubah tata letak UI yang ada.
 - Mengurangi pemeriksaan ekstensi PHP hard-coded menjadi ekstensi yang sebenarnya digunakan oleh file ini.
-- Memperbarui softwareVersion/dateModified JSON-LD dan memperbaiki susunan kata fitur FAQ.
+- Memperbarui `softwareVersion`/`dateModified` JSON-LD dan memperbaiki susunan kata fitur FAQ.
 
-### v1.0.4 - 2026-05-05
+### v1.0.4 — 2026-05-05 ✨ Fitur Baru
 
-- Menambahkan tab WHOIS untuk pencarian WHOIS IP & domain dengan output yang mudah dibaca.
-- Menambahkan tab DNS Lookup (A, AAAA, NS, MX, SOA, TXT) dengan tampilan tabel responsif modern dan ikon Font Awesome per tipe record.
+- Menambahkan tab **WHOIS** untuk pencarian WHOIS IP & domain dengan output yang mudah dibaca.
+- Menambahkan tab **DNS Lookup** (A, AAAA, NS, MX, SOA, TXT) dengan tampilan tabel responsif modern dan ikon Font Awesome per tipe record.
 - Hasil WHOIS diparsing dan disajikan dalam format yang ramah pengguna bagi pengguna non-teknis.
 - Hasil DNS Lookup dirender sebagai tabel terstruktur per tipe record.
 - Kedua tab baru menggunakan AJAX dengan perlindungan CSRF, konsisten dengan tab yang sudah ada.
 - Memperbarui persyaratan untuk menyertakan utilitas sistem `whois` dan `dig`.
 - Minifikasi CSS dan JavaScript WHOIS & DNS Lookup.
 
-### v1.0.3 - 2026-03-05
+### v1.0.3 — 2026-03-05 🐛 Perbaikan Bug
 
 - Memperbaiki variabel `$script_name` yang tidak terdefinisi; sekarang menggunakan `$_SERVER['SCRIPT_NAME']`.
 - Memperbaiki format `date()` yang salah dari `'YY-mm-dd'` menjadi `'Y-m-d'` (ISO 8601).
@@ -580,22 +593,22 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - Menghapus entri changelog duplikat dan baris kosong di komentar dokumen.
 - Tinjauan dan optimasi kode secara menyeluruh.
 
-### v1.0.2 - 2026-02-18
+### v1.0.2 — 2026-02-18 🎨 Polesan Antarmuka
 
 - Memperbarui latar belakang hero di mode terang agar sesuai dengan gaya mode gelap.
 - Memperbarui `lg-logo.webp` dan `hero-lg.webp`.
 - Optimasi minifikasi CSS dan JS.
 
-### v1.0.1 - 2026-02-17
+### v1.0.1 — 2026-02-17 🔒 Keamanan
 
 - Menerapkan Pemeriksaan Validitas Sesi (Token CSRF) pada permintaan POST.
 - Menambahkan penanganan error dwibahasa (ID/EN) untuk sesi yang kedaluwarsa.
-- Peningkatan dan optimasi gambar webp.
-- Peningkatan keamanan dan optimasi.
+- Optimasi gambar WebP.
+- Peningkatan keamanan dan optimasi kode.
 
-### v1.0.0 - 2026-02-16
+### v1.0.0 — 2026-02-16 🚀 Rilis Awal
 
-- Rilis Awal.
+- Rilis awal Alsyundawy PHP Looking Glass.
 - Fungsionalitas Looking Glass lengkap dengan tata letak 3-kolom yang dioptimalkan.
 - Integrasi fitur Iperf3 dan Uji Unduhan.
 
@@ -613,8 +626,10 @@ Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk be
 
 ## Lisensi
 
-Lisensi MIT - Hak Cipta (c) 2026 HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION
+Lisensi MIT — Hak Cipta © 2026 **HARRY DS ALSYUNDAWY** — ALSYUNDAWY IT SOLUTION
 
-> **Catatan:** Cantumkan kredit kepada penulis asli (HARRY DS ALSYUNDAWY - ALSYUNDAWY IT SOLUTION) apabila Anda menggunakan atau memodifikasi script ini.
+> **Catatan:** Cantumkan kredit kepada penulis asli (HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION) apabila Anda menggunakan atau memodifikasi script ini. Atribusi sangat dihargai meski tidak diwajibkan secara hukum oleh Lisensi MIT.
+
+---
 
 ![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")
