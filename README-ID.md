@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.0.7-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.0.8-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -24,7 +24,7 @@
 ## Fitur
 
 | Kategori | Detail |
-|---|---|
+| --- | --- |
 | 🌐 **Diagnostik Jaringan** | Ping (ICMP), Traceroute, MTR, Host, Pencarian WHOIS, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
 | ⚡ **Pengujian Performa** | Iperf3 (TCP/UDP/Reverse), Uji unduhan file biner yang dapat dikustomisasi |
 | 🎨 **Antarmuka Modern** | Responsif penuh (Mobile hingga 4K), Toggle mode Gelap/Terang, Deteksi IP klien real-time |
@@ -34,15 +34,19 @@
 ## Persyaratan
 
 - **PHP**: Versi 8.1 atau lebih tinggi.
-- **Modul PHP**: `php-cli`, `php-common`, `php-fpm` (jika menggunakan Nginx), `php-json`, `php-mbstring`, `php-xml`.
-- **Web Server**: Nginx atau Apache.
+- **Ekstensi PHP**: `filter` dan `json` (wajib), `mbstring` (direkomendasikan untuk operasi string multibyte).
+- **Fungsi PHP**: Fungsi-fungsi berikut tidak boleh dinonaktifkan pada `disable_functions` di `php.ini`:
+  - `proc_open`, `proc_get_status`, `proc_close`, `proc_terminate`
+  - `stream_get_contents`, `stream_select`
+  - `fread`, `fclose`
+- **Web Server**: Nginx, Apache, Caddy, atau web server apa pun yang mendukung PHP.
 - **Utilitas Sistem**: Pengguna web server harus dapat menjalankan perintah berikut:
-  - `ping`
-  - `traceroute`
-  - `mtr`
-  - `iperf3`
-  - `whois`
-  - `dig` atau `host` (biasanya bagian dari paket `bind-utils` atau `dnsutils`)
+  - `ping` (utilitas ping ICMP)
+  - `traceroute` (diagnostik jalur rute)
+  - `mtr` (My Traceroute)
+  - `iperf3` (utilitas pengujian performa)
+  - `whois` (pencarian WHOIS domain/IP)
+  - `dig` atau `host` (utilitas pencarian DNS, biasanya bagian dari paket `bind-utils` atau `dnsutils`)
 
 ---
 
@@ -547,6 +551,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.0.8 — 2026-07-05 🔧 Optimasi Skrip & Perbaikan Shadowing
+
+- **[Perbaikan]** Memperbaiki konflik shadowing variabel pada inline JavaScript di sisi klien (menyelesaikan variabel duplikat seperti `t`, `e`, `o` dalam fetch response dan event handler) untuk mencegah kebocoran scope dan mengoptimalkan rendering peramban.
+- **[Perbaikan]** Memperkuat alat DNS Lookup dengan memvalidasi status peluncuran proses (`$result['started']`) sebelum menjalankan query record, sehingga langsung mengembalikan status HTTP 500 jika binary `dig` tidak terpasang di sistem.
+- **[Perbaikan]** Merapikan peringatan gaya lint Markdown (`MD060/table-column-style`) pada tabel di dokumen panduan dengan menambahkan spasi yang tepat di sekitar karakter pipe (`|`).
+- **[Perbaikan]** Menghapus pernyataan debug `console.log()` yang tersisa dari blok skrip inline guna memastikan output konsol produksi yang bersih.
+- **[Dokumentasi]** Memperbarui dokumentasi persyaratan sistem untuk mencantumkan ekstensi PHP yang diperlukan (filter, json), ekstensi yang direkomendasikan (mbstring), dan fungsi PHP yang wajib aktif (proc_open, stream_select, dll.) untuk mencegah kendala saat pemasangan.
+
+---
 
 ### v1.0.7 — 2026-07-05 🚀 Rilis Versi 1.0.7 & Fitur Baru (Kontribusi oleh [@galiehneh](https://github.com/galiehneh))
 

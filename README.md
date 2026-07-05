@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.0.7-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.0.8-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -24,7 +24,7 @@
 ## Features
 
 | Category | Details |
-|---|---|
+| --- | --- |
 | 🌐 **Network Diagnostics** | Ping (ICMP), Traceroute, MTR, Host, WHOIS Lookup, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
 | ⚡ **Performance Testing** | Iperf3 (TCP/UDP/Reverse), Customizable binary download tests |
 | 🎨 **Modern UI** | Fully responsive (Mobile to 4K), Dark/Light mode toggle, Real-time client IP detection |
@@ -34,15 +34,19 @@
 ## Requirements
 
 - **PHP**: Version 8.1 or higher.
-- **PHP Modules**: `php-cli`, `php-common`, `php-fpm` (if using Nginx), `php-json`, `php-mbstring`, `php-xml`.
-- **Web Server**: Nginx or Apache.
+- **PHP Extensions**: `filter` and `json` (strictly required), `mbstring` (recommended for multibyte string operations).
+- **PHP Functions**: The following functions must not be disabled in `disable_functions` inside `php.ini`:
+  - `proc_open`, `proc_get_status`, `proc_close`, `proc_terminate`
+  - `stream_get_contents`, `stream_select`
+  - `fread`, `fclose`
+- **Web Server**: Nginx, Apache, Caddy, or any PHP-supported web server.
 - **System Utilities**: The web server user must be able to execute the following commands:
-  - `ping`
-  - `traceroute`
-  - `mtr`
-  - `iperf3`
-  - `whois`
-  - `dig` or `host` (usually part of `bind-utils` or `dnsutils`)
+  - `ping` (ICMP ping utility)
+  - `traceroute` (route path diagnostics)
+  - `mtr` (My Traceroute)
+  - `iperf3` (performance testing utility)
+  - `whois` (domain/IP WHOIS lookup)
+  - `dig` or `host` (DNS lookup utilities, usually part of `bind-utils` or `dnsutils`)
 
 ---
 
@@ -547,6 +551,16 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.0.8 — 2026-07-05 🔧 Script Optimizations & Shadowing Fixes
+
+- **[Fix]** Fixed variable shadowing conflicts in inline client-side JavaScript (resolving duplicate variables like `t`, `e`, `o` inside fetch responses and event handlers) to prevent potential scope leakage and optimize browser rendering.
+- **[Fix]** Hardened the DNS Lookup tool by validating the process start status (`$result['started']`) before running record queries, failing fast with HTTP 500 if the `dig` binary is missing from the system.
+- **[Fix]** Cleaned up Markdown lint style warnings (`MD060/table-column-style`) in tables across documentation files by adding proper spacing to pipes.
+- **[Fix]** Removed leftover debug `console.log()` statements from the inline script block to ensure clean production console output.
+- **[Docs]** Updated system requirements documentation to detail required PHP extensions (filter, json), recommended extensions (mbstring), and necessary PHP functions (proc_open, stream_select, etc.) to prevent deployment troubleshooting issues.
+
+---
 
 ### v1.0.7 — 2026-07-05 🚀 Version 1.0.7 Release & Features (Contribution by [@galiehneh](https://github.com/galiehneh))
 
