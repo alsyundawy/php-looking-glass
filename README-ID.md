@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.0.6-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.0.7-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -547,6 +547,18 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.0.7 — 2026-07-05 🚀 Rilis Versi 1.0.7 & Fitur Baru (Kontribusi oleh [@galiehneh](https://github.com/galiehneh))
+
+- **[Perbaikan]** Memperbaiki tautan WhatsApp di header mobile (`wa.me/628126969696`) untuk menghapus digit ganda yang salah.
+- **[Perbaikan]** Memperbaiki tautan WhatsApp di navigasi/footer (`wa.me/628126969696`) agar menggunakan format angka polos tanpa tanda hubung atau simbol (`+/-`) sesuai dengan kebutuhan API `wa.me`.
+- **[Perbaikan]** Memperbaiki tautan LinkedIn dengan menambahkan segmen `/in/` yang hilang (`linkedin.com/in/alsyundawy`).
+- **[Perbaikan]** Memperbaiki tautan Telegram dengan menggunakan domain yang benar (`t.me/alsyundawy` alih-alih `telegram.org/alsyundawy`).
+- **[Keamanan]** Menambahkan validasi status peluncuran proses (`$result['started']`) pada penangan WHOIS sebelum mengakses stdout/stderr, serta mengembalikan kode status HTTP 500 lebih awal jika binary `whois` gagal dijalankan.
+- **[Fitur]** Mengganti file fisik speedtest di disk dengan generator stream chunked secara langsung (*on-the-fly*) melalui handler `?download=X`. Generator ini membuat data uji berukuran 250MB, 500MB, dan 1GB secara dinamis menggunakan `str_repeat` untuk menghemat ruang penyimpanan disk.
+- **[Fitur]** Memperbarui tautan unduhan pada antarmuka pengguna (UI) agar menggunakan jalur relatif (`?download=...`) alih-alih URL absolut.
+
+---
 
 ### v1.0.6 — 2026-07-05 🔧 Perbaikan Bug & Keamanan
 

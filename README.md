@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.0.6-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.0.7-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -547,6 +547,18 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.0.7 — 2026-07-05 🚀 Version 1.0.7 Release & Features (Contribution by [@galiehneh](https://github.com/galiehneh))
+
+- **[Fix]** Fixed WhatsApp link in mobile header (`wa.me/628126969696`) to remove the duplicate digit.
+- **[Fix]** Fixed WhatsApp link in navigation/footer (`wa.me/628126969696`) to use a plain numeric format without dashes or signs (`+/-`), as required by the `wa.me` API.
+- **[Fix]** Corrected LinkedIn link to include the missing `/in/` segment (`linkedin.com/in/alsyundawy`).
+- **[Fix]** Corrected Telegram link to use the correct domain `t.me` instead of `telegram.org`.
+- **[Security]** Added process launch validation (`$result['started']`) in the WHOIS handler before accessing stdout/stderr, returning an early HTTP 500 status code if the `whois` binary fails to launch.
+- **[Feature]** Replaced physical speedtest files on disk with an on-the-fly chunked stream generator (`?download=X` handler). It generates 250MB, 500MB, and 1GB test streams dynamically using `str_repeat` to save disk space.
+- **[Feature]** Updated download links in the UI to use relative paths (`?download=...`) instead of absolute URLs.
+
+---
 
 ### v1.0.6 — 2026-07-05 🔧 Bug Fix & Security Polish
 

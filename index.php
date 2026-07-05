@@ -5,7 +5,7 @@
  * ========================================================================
  * 
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.0.6
+ * @version     : 1.0.7
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -117,12 +117,24 @@
  *     defence-in-depth XSS protection.
  *   - Removed console.log() from production JavaScript to prevent info leakage.
  * 
+ * v1.0.7 - 2026-07-05 (Credit: @galiehneh)
+ *   - Fixed WhatsApp link formats in mobile header and navigation/footer:
+ *     removed duplicate digit and corrected footer to numeric-only format to
+ *     comply with the wa.me API constraints.
+ *   - Fixed LinkedIn social link by adding the missing "/in/" path segment.
+ *   - Fixed Telegram social link by correcting the domain to t.me.
+ *   - Hardened WHOIS lookup tool by verifying process start status ($result['started'])
+ *     before accessing stdout, returning an early HTTP 500 status on launch failure.
+ *   - Replaced physical speedtest files on disk with an on-the-fly chunked stream
+ *     generator using str_repeat, serving 250MB, 500MB, and 1GB tests dynamically.
+ *   - Updated front-end download links from absolute URLs to relative query path (?download=).
+ * 
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.0.6';
+const APP_VERSION = '1.0.7';
 const APP_UPDATED = '2026-07-05';
 
 function error_die(string $title, string $message): never
@@ -610,11 +622,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     // --- WHOIS Handler ---
     if ($cmd === 'whois') {
         $result = run_process(['whois', $host], 30);
-        $raw = trim($result['stdout'] . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''));
-
         if (!$result['started']) {
             json_response(['error' => 'WHOIS lookup failed: ' . $result['stderr']], 500);
         }
+
+        $raw = trim($result['stdout'] . ($result['stderr'] !== '' ? "\n" . $result['stderr'] : ''));
 
         if ($raw === '') {
             json_response(['error' => 'WHOIS lookup failed or returned empty result.'], 500);
