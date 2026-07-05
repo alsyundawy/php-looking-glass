@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.0.8-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.0.9-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -27,7 +27,15 @@
 
 **Sebuah alat Looking Glass PHP yang profesional, ringan, dan terdiri dari satu file, dirancang untuk diagnostik jaringan. Sepenuhnya kompatibel dengan IPv4 dan IPv6, dilengkapi antarmuka modern yang responsif (Mode Gelap/Terang) serta memanfaatkan utilitas sistem standar.**
 
-![looking-glass](/php-looking-glass.png)
+### Tampilan Antarmuka
+
+#### Versi 1.0.9 (Terbaru)
+
+![looking-glass](php-looking-glass-v1.0.9.png)
+
+#### Versi 1.0.8
+
+![looking-glass](php-looking-glass.png)
 
 ## Fitur
 
@@ -559,6 +567,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.0.9 — 2026-07-06 🎨 Peningkatan Antarmuka & Portabilitas
+
+- **[Fitur]** Menambahkan `cdn.jsdelivr.net` ke arahan Content-Security-Policy font-src dan connect-src untuk mengizinkan pemuatan ikon Font Awesome dan bootstrap source maps tanpa pelanggaran CSP.
+- **[Fitur]** Menambahkan fungsi helper `find_binary()` untuk mendeteksi lokasi binary utilitas sistem secara dinamis pada path non-standar (misalnya `/usr/local/sbin` untuk `mtr` pada macOS Homebrew).
+- **[Antarmuka]** Meningkatkan UI DNS Lookup: setiap jenis record (A, AAAA, NS, MX, SOA, TXT) kini memiliki header kartu bergradasi lembut (*muted-gradient*) dan badge pil berwarna yang berbeda untuk diferensiasi visual yang lebih baik.
+- **[Antarmuka]** Membedakan tombol uji unduhan IPv4 dan IPv6 (250MB, 500MB, 1GB) serta tombol Speedtest/Repositori dengan skema warna gradasi lembut (*muted-gradient*) yang unik untuk masing-masing kategori.
+- **[Antarmuka]** Mengoptimalkan responsivitas tata letak untuk semua ukuran layar dari 320px hingga 2K; kartu informasi kini bertumpuk secara vertikal pada perangkat tablet/mobile, dan tabel hasil DNS menggunakan pembungkus horizontal agar kolom tidak terpotong.
+- **[Antarmuka]** Mendesain ulang tabel hasil WHOIS: kartu elegan dengan header gradasi indigo-teal, kolom nilai dengan font monospace, baris belang (*zebra-striping*), dan penampil data WHOIS mentah (*raw data*) yang dapat diringkas.
+- **[Antarmuka]** Lembutkan semua warna gradasi neon/terang pada badge DNS, header kartu DNS, dan tombol uji unduhan agar tetap terlihat berbeda namun tidak menyebabkan kelelahan mata.
+- **[Optimasi]** Melakukan minifikasi pada aset CSS dan JavaScript di sisi klien menggunakan clean-css dan terser untuk lingkungan produksi, serta melakukan verifikasi sintaks PHP sebelum dan sesudah proses minifikasi.
+
+---
 
 ### v1.0.8 — 2026-07-05 🔧 Optimasi Skrip & Perbaikan Shadowing
 

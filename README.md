@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.0.8-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.0.9-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -27,7 +27,15 @@
 
 **A professional, lightweight, single-file PHP Looking Glass tool designed for network diagnostics. Fully compatible with IPv4 and IPv6, featuring a modern, responsive UI (Dark/Light mode) and utilizing standard system utilities.**
 
-![looking-glass](/php-looking-glass.png)
+### User Interface
+
+#### Version 1.0.9 (Latest)
+
+![looking-glass](php-looking-glass-v1.0.9.png)
+
+#### Version 1.0.8
+
+![looking-glass](php-looking-glass.png)
 
 ## Features
 
@@ -559,6 +567,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.0.9 — 2026-07-06 🎨 UI Enhancements & Portability
+
+- **[Feature]** Added `cdn.jsdelivr.net` to Content-Security-Policy font-src and connect-src directives to allow Font Awesome icons and bootstrap source maps to load without CSP violations.
+- **[Feature]** Added dynamic path-resolving helper function `find_binary()` to locate system utility executables in non-standard paths (e.g. `/usr/local/sbin` for macOS Homebrew `mtr`).
+- **[UI]** Enhanced DNS Lookup UI: each record type (A, AAAA, NS, MX, SOA, TXT) now has a distinct muted-gradient card header and colored inline badge pill for visual differentiation.
+- **[UI]** Differentiated IPv4 and IPv6 download test buttons (250MB, 500MB, 1GB) and Speedtest/Repository buttons with unique muted-gradient color schemes per category.
+- **[UI]** Optimized layout responsiveness for all devices from 320px to 2K; info cards now stack on tablet/mobile, DNS result tables use a horizontal scroll wrapper to prevent column clipping.
+- **[UI]** Redesigned WHOIS lookup result table: elegant card with indigo-teal gradient header, monospace value column, zebra-striping, and a collapsible raw WHOIS data viewer.
+- **[UI]** Softened all vivid/neon gradient colors on DNS badges, DNS card headers, and download test buttons so they remain visually distinct but no longer cause eye strain.
+- **[Optimization]** Minified client-side CSS and JavaScript in production using clean-css and terser; PHP syntax verified before and after each minification pass.
+
+---
 
 ### v1.0.8 — 2026-07-05 🔧 Script Optimizations & Shadowing Fixes
 
