@@ -1,100 +1,263 @@
 <!DOCTYPE html>
-<html lang="en" class="h-100">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>403 Forbidden</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <!-- Normalize CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/normalize.css @8.0/normalize.min.css">
-    <!-- Bootstrap 5 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css ">
-    <!-- Font Awesome -->
-    <script src="https://cdn.jsdelivr.net/npm/ @fortawesome/fontawesome-free/js/all.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ @fortawesome/fontawesome-free/css/fontawesome.min.css">
     <style>
         :root {
-            --gradient-color: linear-gradient(135deg, #6c5ce7 0%, #d56bf2 100%); /* Purple gradient */
+            --primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #d56bf2 100%);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --bg-glass: rgba(255, 255, 255, 0.95);
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --border-radius: 16px;
         }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-main: #f7fafc;
+                --text-muted: #a0aec0;
+                --bg-glass: rgba(26, 32, 44, 0.95);
+                --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background: var(--gradient-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--primary-gradient);
             min-height: 100vh;
             display: flex;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-main);
+            overflow-x: hidden;
         }
+
         .error-card {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 2.5rem;
+            background: var(--bg-glass);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            max-width: 520px;
+            width: 100%;
+            padding: 40px 30px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
         .error-icon {
-            font-size: 5rem;
-            animation: float 3s ease-in-out infinite;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 90px;
+            height: 90px;
+            margin-bottom: 24px;
+            animation: float 4s ease-in-out infinite;
         }
+
+        .error-icon svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+        }
+
         .error-number {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: 800;
-            background-image: var(--gradient-color);
+            letter-spacing: -2px;
+            background: var(--primary-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            line-height: 1;
         }
-        .nav-buttons {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+
+        .error-message {
+            margin-bottom: 24px;
         }
-        .btn-custom {
-            background-image: var(--gradient-color);
-            border: none;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 50px;
-            transition: transform 0.2s ease;
+
+        .error-message h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
+
+        .error-message p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
         .lang-divider {
-            border-top: 1px solid #e2e8f0;
-            margin: 1.5rem 0;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.08);
+            margin: 20px 0;
         }
+
+        @media (prefers-color-scheme: dark) {
+            .lang-divider {
+                background: rgba(255, 255, 255, 0.08);
+            }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 30px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            border: none;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .btn-secondary {
+                background: rgba(255, 255, 255, 0.08);
+            }
+            .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .redirect-notice {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #countdown {
+            font-weight: 700;
+        }
+
         @keyframes float {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-1rem); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .error-card {
+                padding: 30px 20px;
+            }
+            .nav-buttons {
+                flex-direction: column;
+            }
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="error-card text-center">
-        <div class="error-icon text-purple mb-4"> <!-- Icon color matches gradient -->
-            <i class="fas fa-ban"></i>
-        </div>
-        <h1 class="error-number mb-3">403</h1>
-        <!-- Indonesian Error Message -->
-        <h2 class="h3 mb-3">Akses Dilarang</h2>
-        <p class="text-muted mb-2">Anda tidak memiliki izin untuk mengakses halaman ini.</p>
-        <div class="lang-divider"></div>
-        <!-- English Error Message -->
-        <h2 class="h3 mb-3">Forbidden</h2>
-        <p class="text-muted mb-4">You don't have permission to access this page.</p>
-        <div class="nav-buttons">
-            <button onclick="safeNavigateBack()" class="btn btn-custom">
-                <i class="fas fa-arrow-left me-2"></i>Kembali / Back
-            </button>
-            <a href="/" class="btn btn-outline-secondary">
-                <i class="fas fa-home me-2"></i>Beranda / Home
-            </a>
-        </div>
+<div class="error-card">
+    <div class="error-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6c5ce7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+        </svg>
+    </div>
+    <h1 class="error-number">403</h1>
+    
+    <!-- Indonesian -->
+    <div class="error-message">
+        <h2>Akses Dilarang</h2>
+        <p>Anda tidak memiliki izin untuk mengakses halaman ini.</p>
+    </div>
+    
+    <div class="lang-divider"></div>
+    
+    <!-- English -->
+    <div class="error-message">
+        <h2>Forbidden</h2>
+        <p>You don't have permission to access this page.</p>
+    </div>
+    
+    <div class="nav-buttons">
+        <button onclick="safeNavigateBack()" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Kembali / Back
+        </button>
+        <a href="/" class="btn btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            Beranda / Home
+        </a>
+    </div>
+    
+    <div class="redirect-notice">
+        Otomatis kembali dalam / Redirecting in <span id="countdown">30</span>s
     </div>
 </div>
+
 <script>
     let seconds = 30;
+    const countdownEl = document.getElementById('countdown');
     const countdown = setInterval(() => {
-        document.getElementById('countdown').textContent = --seconds;
-        if (seconds <= 0) window.location.href = '/';
+        seconds--;
+        if (countdownEl) countdownEl.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            window.location.href = '/';
+        }
     }, 1000);
+
     function safeNavigateBack() {
         clearInterval(countdown);
         if (history.length > 1 && document.referrer.includes(window.location.host)) {
@@ -104,9 +267,5 @@
         }
     }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js "></script>
-<script src="https://cdn.jsdelivr.net/npm/xmlhttprequest @1.8/lib/XMLHttpRequest.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.8/umd/popper.min.js "></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js "></script>
 </body>
 </html>
