@@ -15,7 +15,15 @@
 
 ## Statistik Bintang
 
-[![Star History Chart](https://api.star-history.com/svg?repos=alsyundawy/php-looking-glass&type=Date)](https://star-history.com/#alsyundawy/php-looking-glass&Date)
+<!-- markdownlint-disable MD033 -->
+<a href="https://star-history.com/#alsyundawy/php-looking-glass&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
+ </picture>
+ </a>
+<!-- markdownlint-enable MD033 -->
 
 **Sebuah alat Looking Glass PHP yang profesional, ringan, dan terdiri dari satu file, dirancang untuk diagnostik jaringan. Sepenuhnya kompatibel dengan IPv4 dan IPv6, dilengkapi antarmuka modern yang responsif (Mode Gelap/Terang) serta memanfaatkan utilitas sistem standar.**
 
@@ -480,7 +488,7 @@ Temukan bagian `<div class="social-links">` di footer (~baris 1013) dan perbarui
 | Platform | URL yang perlu diubah |
 | ---------- | ----------------------- |
 | GitHub | `https://github.com/alsyundawy` |
-| LinkedIn | `https://linkedin.com/alsyundawy` |
+| LinkedIn | `https://linkedin.com/in/alsyundawy` |
 | Twitter/X | `https://twitter.com/alsyundawy` |
 | Facebook | `https://facebook.com/alsyundawy` |
 | Instagram | `https://instagram.com/harry.ds.alsyundawy` |
@@ -488,7 +496,7 @@ Temukan bagian `<div class="social-links">` di footer (~baris 1013) dan perbarui
 | TikTok | `https://tiktok.com/alsyundawy` |
 | Threads | `https://threads.net/alsyundawy` |
 | Discord | `https://discord.gg/alsyundawy` |
-| Telegram | `https://telegram.org/alsyundawy` |
+| Telegram | `https://t.me/alsyundawy` |
 | WhatsApp | `https://wa.me/628126969696` *(hanya angka — tanpa `+` atau `-`)* |
 
 ## Kustomisasi Gambar dan Logo

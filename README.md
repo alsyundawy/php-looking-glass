@@ -13,9 +13,17 @@
 [![GitHub Forks](https://img.shields.io/github/forks/alsyundawy/php-looking-glass?style=social)](https://github.com/alsyundawy/php-looking-glass/network/members)
 [![GitHub Contributors](https://img.shields.io/github/contributors/alsyundawy/php-looking-glass?style=social)](https://github.com/alsyundawy/php-looking-glass/graphs/contributors)
 
-## Stargazers over time
+## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=alsyundawy/php-looking-glass&type=Date)](https://star-history.com/#alsyundawy/php-looking-glass&Date)
+<!-- markdownlint-disable MD033 -->
+<a href="https://star-history.com/#alsyundawy/php-looking-glass&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
+ </picture>
+</a>
+<!-- markdownlint-enable MD033 -->
 
 **A professional, lightweight, single-file PHP Looking Glass tool designed for network diagnostics. Fully compatible with IPv4 and IPv6, featuring a modern, responsive UI (Dark/Light mode) and utilizing standard system utilities.**
 
@@ -480,7 +488,7 @@ Find the `<div class="social-links">` section in the footer (~line 1013) and upd
 | Platform | URL to change |
 | ---------- | --------------- |
 | GitHub | `https://github.com/alsyundawy` |
-| LinkedIn | `https://linkedin.com/alsyundawy` |
+| LinkedIn | `https://linkedin.com/in/alsyundawy` |
 | Twitter/X | `https://twitter.com/alsyundawy` |
 | Facebook | `https://facebook.com/alsyundawy` |
 | Instagram | `https://instagram.com/harry.ds.alsyundawy` |
@@ -488,7 +496,7 @@ Find the `<div class="social-links">` section in the footer (~line 1013) and upd
 | TikTok | `https://tiktok.com/alsyundawy` |
 | Threads | `https://threads.net/alsyundawy` |
 | Discord | `https://discord.gg/alsyundawy` |
-| Telegram | `https://telegram.org/alsyundawy` |
+| Telegram | `https://t.me/alsyundawy` |
 | WhatsApp | `https://wa.me/628126969696` *(numeric only — no `+` or `-`)* |
 
 ## Image & Logo Customization
