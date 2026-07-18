@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.0.9-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -29,7 +29,7 @@
 
 ### User Interface
 
-#### Version 1.0.9 (Latest)
+#### Version 1.1.0 (Latest)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -567,6 +567,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.1.0 — 2026-07-18 🔧 Bug Fixes & Security
+
+- **[Fix]** Fixed WhatsApp social link in footer: corrected scientific-notation artifact (`wa.me/6.28126969696e+11`) back to plain numeric format (`wa.me/628126969696`) as required by the `wa.me` API spec.
+- **[Fix]** Fixed PeeringDB footer link upgraded from HTTP to HTTPS.
+- **[Fix]** Fixed streaming POST handler: removed incorrect `sanitize_output()` (`htmlspecialchars`) wrapping on plain-text terminal output; HTML entity encoding in a `text/plain` context corrupts special characters such as `&`, `<`, `>` in `$serverLocation` and command display strings.
+- **[Fix]** Fixed output buffer handling in streaming POST handler: changed `ob_end_flush()` to `ob_end_clean()` to discard stale buffered content before starting the live process stream, preventing accidental partial HTML from being sent.
+- **[Security]** Added `JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE` flags to all inline JSON-LD `json_encode()` calls to prevent `</script>` tag injection and ensure proper Unicode passthrough in structured data blocks.
+- **[Fix]** Fixed JSON-LD `alternateName` field: replaced `$siteNameSafe` (HTML-escaped) with raw `$siteName`; HTML entity encoding is incorrect inside JSON context.
+- **[Optimization]** Optimized `opcache.memory_consumption` from 1024 MB to 128 MB — the prior 1 GB allocation was excessive for a single-file PHP application.
+- **[Docs]** Improved inline documentation: added clarifying comment to session `ini_set()` calls explaining their role as backward-compatibility fallbacks.
+
+---
 
 ### v1.0.9 — 2026-07-06 🎨 UI Enhancements & Portability
 

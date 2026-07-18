@@ -1,6 +1,6 @@
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.0.9-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.1.0-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -29,7 +29,7 @@
 
 ### Tampilan Antarmuka
 
-#### Versi 1.0.9 (Terbaru)
+#### Versi 1.1.0 (Terbaru)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -567,6 +567,19 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.1.0 — 2026-07-18 🔧 Perbaikan Bug & Keamanan
+
+- **[Perbaikan]** Memperbaiki tautan WhatsApp di footer: mengembalikan format numerasi ilmiah (`wa.me/6.28126969696e+11`) ke format numerik biasa (`wa.me/628126969696`) sesuai spesifikasi API `wa.me`.
+- **[Perbaikan]** Memperbarui tautan PeeringDB di footer dari HTTP ke HTTPS.
+- **[Perbaikan]** Memperbaiki handler streaming POST: menghapus pembungkus `sanitize_output()` (`htmlspecialchars`) yang tidak tepat pada keluaran terminal teks biasa; enkoding entitas HTML dalam konteks `text/plain` merusak karakter khusus seperti `&`, `<`, `>` pada string `$serverLocation` dan tampilan perintah.
+- **[Perbaikan]** Memperbaiki penanganan buffer keluaran di handler streaming POST: mengubah `ob_end_flush()` menjadi `ob_end_clean()` untuk membuang konten yang tersangkut di buffer sebelum memulai aliran proses langsung, mencegah penggalan HTML tidak sengaja terkirim.
+- **[Keamanan]** Menambahkan flag `JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE` pada semua pemanggilan `json_encode()` untuk JSON-LD inline guna mencegah injeksi tag `</script>` dan memastikan passthrough Unicode yang benar pada blok data terstruktur.
+- **[Perbaikan]** Memperbaiki kolom `alternateName` pada JSON-LD: mengganti `$siteNameSafe` (sudah di-escape HTML) dengan `$siteName` mentah; enkoding entitas HTML tidak tepat dalam konteks JSON.
+- **[Optimasi]** Mengoptimalkan `opcache.memory_consumption` dari 1024 MB menjadi 128 MB — alokasi 1 GB sebelumnya berlebihan untuk aplikasi PHP satu file dan berpotensi menyebabkan kekurangan sumber daya pada server berbagi atau kontainerisasi.
+- **[Dokumentasi]** Meningkatkan dokumentasi inline: menambahkan komentar penjelas pada pemanggilan `ini_set()` sesi yang menjelaskan perannya sebagai fallback kompatibilitas mundur.
+
+---
 
 ### v1.0.9 — 2026-07-06 🎨 Peningkatan Antarmuka & Portabilitas
 
