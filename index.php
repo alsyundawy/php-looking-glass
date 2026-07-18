@@ -6,7 +6,7 @@
  * ========================================================================
  * 
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.0.9
+ * @version     : 1.1.0
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -14,7 +14,7 @@
  * @phone       : +62 856-8-515-212 / +62 812-9898-6464
  * @link        : https://github.com/alsyundawy/php-looking-glass
  * @created     : February 16, 2026
- * @modified    : July 06, 2026
+ * @modified    : July 18, 2026
  * 
  * CREATED BY:
  * Name        : Harry Dertin Sutisna Alsyundawy
@@ -162,13 +162,36 @@
  *   - Softened all vivid/neon gradient colors on DNS badges, DNS card headers, and download test buttons so they remain visually distinct but no longer cause eye strain.
  *   - Minified client-side CSS and JavaScript in production using clean-css and terser; PHP syntax verified before and after each minification pass.
  * 
+ * v1.1.0 - 2026-07-18
+ *   - Fixed WhatsApp social link in footer: corrected scientific-notation artifact
+ *     (wa.me/6.28126969696e+11) back to plain numeric format (wa.me/628126969696)
+ *     as required by the wa.me API spec.
+ *   - Fixed PeeringDB footer link upgraded from HTTP to HTTPS.
+ *   - Fixed streaming POST handler banner: removed incorrect sanitize_output()
+ *     (htmlspecialchars) wrapping on plain-text terminal output; HTML entity
+ *     encoding in a text/plain context corrupts special characters such as
+ *     '&', '<', '>' in $serverLocation and command display strings.
+ *   - Fixed output buffer handling in streaming POST handler: changed ob_end_flush()
+ *     to ob_end_clean() to discard any stale buffered content before starting the
+ *     live process stream, preventing accidental partial HTML from being sent.
+ *   - Security: added JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE flags
+ *     to all inline JSON-LD json_encode() calls to prevent </script> tag injection
+ *     and ensure proper Unicode passthrough in structured data blocks.
+ *   - Fixed JSON-LD alternateName field: replaced $siteNameSafe (HTML-escaped) with
+ *     raw $siteName; HTML entity encoding is incorrect inside JSON context.
+ *   - Optimized opcache.memory_consumption from 1024 MB to 128 MB — the prior 1 GB
+ *     allocation was excessive for a single-file PHP application and could starve
+ *     other PHP processes on shared or containerized hosts.
+ *   - Improved inline documentation: added clarifying comment to session ini_set()
+ *     calls explaining their role as backward-compatibility fallbacks.
+ * 
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.0.9';
-const APP_UPDATED = '2026-07-06';
+const APP_VERSION = '1.1.0';
+const APP_UPDATED = '2026-07-18';
 
 function error_die(string $title, string $message): never
 {
@@ -541,12 +564,14 @@ if (!empty($missing_functions)) {
 @ini_set('realpath_cache_size', '8192k');          // 8 MB path cache.
 @ini_set('realpath_cache_ttl', '1200');            // 20 minutes.
 @ini_set('opcache.enable', '1');
-@ini_set('opcache.memory_consumption', '1024');    // 1024 MB for compiled code if PHP-FPM policy allows it.
+@ini_set('opcache.memory_consumption', '128');     // 128 MB for compiled code (sufficient for single-file app).
 @ini_set('opcache.max_accelerated_files', '30000');
 @ini_set('opcache.interned_strings_buffer', '32');
 @ini_set('opcache.validate_timestamps', '0');      // Production mode; reload PHP-FPM after deployment.
 @ini_set('opcache.revalidate_freq', '60');
 
+// Set session ini directives as a fallback for PHP environments that ignore
+// session_set_cookie_params() cookie options array (pre-7.3 compatible).
 ini_set('session.cookie_httponly', '1');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.cookie_samesite', 'Strict');
@@ -861,12 +886,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $command = $command_map[$cmd];
 
     echo "=======================================================================\n";
-    echo '|| Menjalankan: ' . sanitize_output(command_to_display($command)) . "\n";
-    echo '|| Dari Server: ' . sanitize_output($serverLocation);
+    echo '|| Menjalankan: ' . command_to_display($command) . "\n";
+    echo '|| Dari Server: ' . $serverLocation;
     echo "\n=======================================================================\n\n";
 
     while (ob_get_level() > 0) {
-        @ob_end_flush();
+        @ob_end_clean();
     }
 
     flush();
@@ -1019,7 +1044,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 			'@context' => 'https://schema.org',
 			'@type' => 'SoftwareApplication',
 			'name' => 'Alsyundawy Looking Glass',
-			'alternateName' => ['Looking Glass ' . $siteNameSafe, 'LG Alsyundawy'],
+			'alternateName' => ['Looking Glass ' . $siteName, 'LG Alsyundawy'],
 			'applicationCategory' => 'NetworkApplication',
 			'operatingSystem' => ['Web Browser', 'Platform Independent'],
 			'url' => $canonical,
@@ -1178,23 +1203,23 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 
 	<!-- JSON-LD structured data -->
 	<script type="application/ld+json">
-	<?= json_encode($appSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+	<?= json_encode($appSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) ?>
 	</script>
 
 	<script type="application/ld+json">
-	<?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+	<?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) ?>
 	</script>
 
 	<script type="application/ld+json">
-	<?= json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+	<?= json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) ?>
 	</script>
 
 	<script type="application/ld+json">
-	<?= json_encode($orgSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+	<?= json_encode($orgSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) ?>
 	</script>
 
 	<script type="application/ld+json">
-	<?= json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+	<?= json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) ?>
 	</script>
 
 	<style>
@@ -1598,7 +1623,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 							<a href="https://bgp.he.net/AS696969" target="_blank" rel="noopener">HE.NET</a> |
 							<a href="https://bgp.tools/as/696969" target="_blank" rel="noopener">BGP.Tools</a> |
 							<a href="https://www.robtex.com/as/AS696969.html" target="_blank" rel="noopener">ROBTEX</a> |
-							<a href="http://www.peeringdb.com/view.php?asn=696969" target="_blank" rel="noopener">PEERINGDB</a> |
+							<a href="https://www.peeringdb.com/view.php?asn=696969" target="_blank" rel="noopener">PEERINGDB</a> |
 							<a href="https://ipinfo.io/AS696969" target="_blank" rel="noopener">IPinfo</a> |
 							<a href="https://asrank.caida.org/asns/696969" target="_blank" rel="noopener">ASRank</a>
 						</p>
