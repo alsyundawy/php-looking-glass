@@ -1,6 +1,7 @@
+---
 name: Super-Linter
 
-on:
+'on':
   push:
     branches: [main, master]
   pull_request:
