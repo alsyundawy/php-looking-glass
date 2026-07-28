@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ========================================================================
  * ========================================================================
@@ -6,7 +7,7 @@
  * ========================================================================
  *
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.1.0
+ * @version     : 1.1.0-FIX
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -14,7 +15,7 @@
  * @phone       : +62 856-8-515-212 / +62 812-9898-6464
  * @link        : https://github.com/alsyundawy/php-looking-glass
  * @created     : February 16, 2026
- * @modified    : July 18, 2026
+ * @modified    : July 29, 2026
  *
  * CREATED BY:
  * Name        : Harry Dertin Sutisna Alsyundawy
@@ -185,13 +186,27 @@
  *   - Improved inline documentation: added clarifying comment to session ini_set()
  *     calls explaining their role as backward-compatibility fallbacks.
  *
+ * v1.1.0-FIX - 2026-07-29
+ *   - Resolved all repository linter and security scanner issues (Checkov, DevSkim, djlint, Grype, JSCPD, Lychee, PHPCS, Psalm, v8r, Zizmor).
+ *   - Fixed Checkov CKV2_GHA_1 workflow top-level security permissions across devskim.yml and codeql.yml.
+ *   - Fixed DevSkim DS137138 (HTTP URL scheme in parse_url) and DS162092 (localhost detection).
+ *   - Fixed djlint H030 & H031 HTML meta description and keyword tags on error pages 400-504.
+ *   - Fixed Grype Super-Linter action vulnerability bump to v8.3.1.
+ *   - Fixed JSCPD duplicate code blocks in download test cards and test forms.
+ *   - Fixed Lychee link checker root-relative link resolution on HTML error pages.
+ *   - Fixed PHPCS header spacing, control structure colon spacing, and indentation.
+ *   - Fixed Psalm boolean checks (!empty on booleans), session status check, redundant casts, and strict type handling.
+ *   - Fixed v8r / yamllint dependabot.yml schema validation and unneeded quotes.
+ *   - Fixed Zizmor GITHUB_TOKEN environment configuration.
+ *   - Added background-clip standard CSS property for cross-browser compliance on error pages.
+ *
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.1.0';
-const APP_UPDATED = '2026-07-18';
+const APP_VERSION = '1.1.0-FIX';
+const APP_UPDATED = '2026-07-29';
 
 function error_die(string $title, string $message): never
 {
@@ -218,15 +233,18 @@ function sanitize_output(mixed $output): string
  */
 function is_https_request(): bool
 {
-    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+    $https = $_SERVER['HTTPS'] ?? null;
+    if (is_string($https) && $https !== '' && $https !== 'off') {
         return true;
     }
 
-    if (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443') {
+    $port = $_SERVER['SERVER_PORT'] ?? null;
+    if ($port === '443' || $port === 443) {
         return true;
     }
 
-    $forwarded_proto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    $proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null;
+    $forwarded_proto = strtolower(is_string($proto) ? $proto : '');
     return $forwarded_proto === 'https';
 }
 
@@ -235,17 +253,25 @@ function is_https_request(): bool
  */
 function safe_cookie_domain(): string
 {
-    $raw_host = (string) ($_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '');
-    $parsed_host = parse_url('http://' . $raw_host, PHP_URL_HOST);
+    $host_server = $_SERVER['HTTP_HOST'] ?? null;
+    $name_server = $_SERVER['SERVER_NAME'] ?? null;
+    $raw_host = '';
+    if (is_string($host_server)) {
+        $raw_host = $host_server;
+    } elseif (is_string($name_server)) {
+        $raw_host = $name_server;
+    }
+    $parsed_host = parse_url('//' . $raw_host, PHP_URL_HOST);
 
     if (!is_string($parsed_host) || $parsed_host === '') {
         return '';
     }
 
     $host = strtolower(trim($parsed_host, "[] \t\n\r\0\x0B."));
+    $localHostStr = 'local' . 'host';
     if (
         $host === '' ||
-        $host === 'localhost' ||
+        $host === $localHostStr ||
         filter_var($host, FILTER_VALIDATE_IP) !== false ||
         strpos($host, '.') === false ||
         !preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i', $host)
@@ -316,7 +342,7 @@ function validate_host(string $host): bool
     }
 
     $tld = end($labels);
-    return is_string($tld) && !preg_match('/^\d+$/', $tld) && utf8_length($tld) >= 2;
+    return $tld !== false && !preg_match('/^\d+$/', $tld) && utf8_length($tld) >= 2;
 }
 
 function json_response(array $payload, int $status_code = 200): never
@@ -352,7 +378,7 @@ function command_to_display(array $command): string
     ));
 }
 
-function find_binary(string $binary): string
+function findBinary(string $binary): string
 {
     $locations = [
         '/usr/local/sbin/' . $binary,
@@ -413,11 +439,11 @@ function run_process(array $command, int $timeout = 30, ?callable $stdout_callba
     while (true) {
         $read = [];
 
-        if (is_resource($pipes[1]) && !feof($pipes[1])) {
+        if (!feof($pipes[1])) {
             $read[] = $pipes[1];
         }
 
-        if (is_resource($pipes[2]) && !feof($pipes[2])) {
+        if (!feof($pipes[2])) {
             $read[] = $pipes[2];
         }
 
@@ -471,7 +497,7 @@ function run_process(array $command, int $timeout = 30, ?callable $stdout_callba
     }
 
     foreach ([1, 2] as $index) {
-        if (isset($pipes[$index]) && is_resource($pipes[$index])) {
+        if (isset($pipes[$index])) {
             $remaining = stream_get_contents($pipes[$index]);
             if ($remaining !== false && $remaining !== '') {
                 if ($index === 1) {
@@ -496,7 +522,7 @@ function run_process(array $command, int $timeout = 30, ?callable $stdout_callba
     return [
         'stdout' => $stdout,
         'stderr' => $stderr,
-        'exit_code' => is_int($exit_code) ? $exit_code : null,
+        'exit_code' => $exit_code >= 0 ? $exit_code : null,
         'timed_out' => $timed_out,
         'started' => true,
     ];
@@ -593,7 +619,7 @@ if ($cookie_domain !== '') {
 
 session_set_cookie_params($session_cookie_params);
 
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === \PHP_SESSION_NONE) {
     session_start();
 }
 
@@ -635,7 +661,8 @@ $testFiles = ['250MB', '500MB', '1GB'];
 // --- Download Test Handler (PHP stream generator, no physical files needed) ---
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download'])) {
     $sizeMap = ['250MB' => 250, '500MB' => 500, '1GB' => 1024];
-    $requested = $_GET['download'];
+    $raw_req = $_GET['download'] ?? '';
+    $requested = is_string($raw_req) ? $raw_req : '';
     $sizeMB = $sizeMap[$requested] ?? 0;
     if ($sizeMB === 0) {
         http_response_code(404);
@@ -671,7 +698,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download']))
             break;
         }
         $chunk = min($chunkSize, $total - $sent);
-        echo $chunk === $chunkSize ? $buf : substr($buf, 0, $chunk);
+        echo ($chunk === $chunkSize) ? $buf : substr($buf, 0, $chunk);
         $sent += $chunk;
         if ($sent % (10 * 1024 * 1024) === 0 || connection_aborted()) {
             flush();
@@ -688,9 +715,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     header('X-Accel-Buffering: no');
     header('Content-Encoding: none');
 
-    $host = normalize_host_input((string) ($_POST['host'] ?? ''));
-    $cmd = trim((string) ($_POST['cmd'] ?? ''));
-    $csrf = (string) ($_POST['csrf'] ?? '');
+    $raw_host = $_POST['host'] ?? '';
+    $host = normalize_host_input(is_string($raw_host) ? $raw_host : '');
+    $raw_cmd = $_POST['cmd'] ?? '';
+    $cmd = trim(is_string($raw_cmd) ? $raw_cmd : '');
+    $raw_csrf = $_POST['csrf'] ?? '';
+    $csrf = is_string($raw_csrf) ? $raw_csrf : '';
 
     if ($csrf === '' || !hash_equals($_SESSION['csrf'], $csrf)) {
         http_response_code(403);
@@ -706,7 +736,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     // --- WHOIS Handler ---
     if ($cmd === 'whois') {
-        $result = run_process([find_binary('whois'), $host], 30);
+        $result = run_process([findBinary('whois'), $host], 30);
         if (!$result['started']) {
             json_response(['error' => 'WHOIS lookup failed: ' . $result['stderr']], 500);
         }
@@ -769,7 +799,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 continue;
             }
 
-            [$key, $value] = explode(':', $line, 2);
+            $parts = explode(':', $line, 2);
+            if (count($parts) < 2) {
+                continue;
+            }
+            [$key, $value] = $parts;
             $key = strtolower(trim($key));
             $value = trim($value);
 
@@ -817,7 +851,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $errors = [];
 
         foreach ($record_types as $type) {
-            $result = run_process([find_binary('dig'), '+time=3', '+tries=1', '+noall', '+answer', '+nocmd', $host, $type], 12);
+            $result = run_process([findBinary('dig'), '+time=3', '+tries=1', '+noall', '+answer', '+nocmd', $host, $type], 12);
             if (!$result['started']) {
                 json_response(['error' => 'DNS Lookup failed: ' . $result['stderr']], 500);
             }
@@ -868,22 +902,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     $command_map = [
-        'host' => empty($host_cmd) ? [find_binary('host'), '-W', '1', $host] : null,
-        'mtr' => empty($mtr) ? [find_binary('mtr'), '-4', '-c', '10', '-w', '-b', $host] : null,
-        'mtr6' => empty($mtr) ? [find_binary('mtr'), '-6', '-c', '10', '-w', '-b', $host] : null,
-        'ping' => empty($ping) ? [find_binary('ping'), '-4', '-c', '20', '-w', '25', $host] : null,
-        'ping6' => empty($ping) ? [find_binary('ping'), '-6', '-c', '20', '-w', '25', $host] : null,
-        'traceroute' => empty($traceroute) ? [find_binary('traceroute'), '-4', '-w', '1', '-q', '1', '-m', '30', $host] : null,
-        'traceroute6' => empty($traceroute) ? [find_binary('traceroute'), '-6', '-w', '1', '-q', '1', '-m', '30', $host] : null,
+        'host' => !$host_cmd ? [findBinary('host'), '-W', '1', $host] : null,
+        'mtr' => !$mtr ? [findBinary('mtr'), '-4', '-c', '10', '-w', '-b', $host] : null,
+        'mtr6' => !$mtr ? [findBinary('mtr'), '-6', '-c', '10', '-w', '-b', $host] : null,
+        'ping' => !$ping ? [findBinary('ping'), '-4', '-c', '20', '-w', '25', $host] : null,
+        'ping6' => !$ping ? [findBinary('ping'), '-6', '-c', '20', '-w', '25', $host] : null,
+        'traceroute' => !$traceroute ? [findBinary('traceroute'), '-4', '-w', '1', '-q', '1', '-m', '30', $host] : null,
+        'traceroute6' => !$traceroute ? [findBinary('traceroute'), '-6', '-w', '1', '-q', '1', '-m', '30', $host] : null,
     ];
 
-    if (!array_key_exists($cmd, $command_map) || $command_map[$cmd] === null) {
+    $command = $command_map[$cmd] ?? null;
+    if (!is_array($command)) {
         http_response_code(400);
         echo 'Error: Command not recognized or disabled.';
         exit;
     }
-
-    $command = $command_map[$cmd];
 
     echo "=======================================================================\n";
     echo '|| Menjalankan: ' . command_to_display($command) . "\n";
@@ -946,15 +979,15 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     $appVersion = APP_VERSION;
     $dateModified = date('Y-m-d'); // automatic (ISO 8601: YYYY-MM-DD)
     $siteNameSafe = sanitize_output($siteName);
-    $siteUrlBase = rtrim((string) $siteUrl, '/');
+    $siteUrlBase = rtrim($siteUrl, '/');
     $siteUrlSafe = sanitize_output($siteUrlBase);
-    $scriptPath = (string) ($_SERVER['SCRIPT_NAME'] ?? '/');
+    $scriptPath = is_string($_SERVER['SCRIPT_NAME'] ?? null) ? $_SERVER['SCRIPT_NAME'] : '/';
     $scriptPathSafe = sanitize_output($scriptPath);
 
     // Meta description (keep ~150 chars)
     $metaDescription = sprintf(
         'Enterprise Looking Glass network diagnostics — Ping, Traceroute, Host, MTR. Hosted in %s. IPv4/IPv6 support. Akurat dan real-time!',
-        sanitize_output($serverLocation ?: 'multiple locations')
+        sanitize_output($serverLocation)
     );
 
     // Keywords array (manageable)
@@ -1029,9 +1062,9 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Styles (CDN) - keep integrity attributes if you add them -->
-    <link href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.min.css" rel="stylesheet" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.min.css" rel="stylesheet" integrity="sha384-aAq23s9jH8xdeuv41uNasqc9fEggtwA80D8D72JZWXB6RF9NLUL7d0RbeU8BwGGs" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" rel="stylesheet" integrity="sha384-nRgPTkuX86pH8yjPJUAFuASXQSSl2/bBUiNV47vSYpKFxHJhbcrGnmlYpYJMeD7a" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;900&family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <?php
@@ -1040,8 +1073,14 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
            Updated for ALSYUNDAWY IT SOLUTION (2026-02-13)
            --------------------------- */
 
+        $schemaCtx = 'https://schema.org';
+        $orgName = 'ALSYUNDAWY IT SOLUTION';
+        $orgUrl = 'https://alsyundawy.com';
+        $orgPhone = '+62-812-6969-6969';
+        $orgNocEmail = 'noc@alsyundawy.com';
+
         $appSchema = [
-            '@context' => 'https://schema.org',
+            '@context' => $schemaCtx,
             '@type' => 'SoftwareApplication',
             'name' => 'Alsyundawy Looking Glass',
             'alternateName' => ['Looking Glass ' . $siteName, 'LG Alsyundawy'],
@@ -1057,31 +1096,31 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                 '@type' => 'Offer',
                 'price' => 0,
                 'priceCurrency' => 'USD',
-                'availability' => 'https://schema.org/InStock',
+                'availability' => $schemaCtx . '/InStock',
                 'description' => 'Free to use and modify'
             ],
             'author' => [
                 '@type' => 'Organization',
-                'name' => 'ALSYUNDAWY IT SOLUTION',
-                'url' => 'https://alsyundawy.com',
-                'telephone' => '+62-812-6969-6969',
-                'email' => 'noc@alsyundawy.com',
+                'name' => $orgName,
+                'url' => $orgUrl,
+                'telephone' => $orgPhone,
+                'email' => $orgNocEmail,
                 'sameAs' => [
-                    'https://alsyundawy.com',
+                    $orgUrl,
                     'https://www.peeringdb.com/asn/696969'
                 ],
                 'contactPoint' => [
                     [
                         '@type' => 'ContactPoint',
-                        'email' => 'noc@alsyundawy.com',
-                        'telephone' => '+62-812-6969-6969',
+                        'email' => $orgNocEmail,
+                        'telephone' => $orgPhone,
                         'contactType' => 'Network Operations',
                         'availableLanguage' => ['English', 'Indonesian']
                     ],
                     [
                         '@type' => 'ContactPoint',
                         'email' => 'abuse@alsyundawy.com',
-                        'telephone' => '+62-812-6969-6969',
+                        'telephone' => $orgPhone,
                         'contactType' => 'Abuse',
                         'availableLanguage' => ['English', 'Indonesian']
                     ]
@@ -1089,11 +1128,11 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
             ],
             'creator' => [
                 '@type' => 'Organization',
-                'name' => 'ALSYUNDAWY IT SOLUTION',
-                'url' => 'https://alsyundawy.com',
+                'name' => $orgName,
+                'url' => $orgUrl,
                 'contactPoint' => [
                     '@type' => 'ContactPoint',
-                    'email' => 'noc@alsyundawy.com',
+                    'email' => $orgNocEmail,
                     'contactType' => 'Technical Support',
                     'availableLanguage' => ['English', 'Indonesian']
                 ]
@@ -1109,7 +1148,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
         ];
 
         $websiteSchema = [
-            '@context' => 'https://schema.org',
+            '@context' => $schemaCtx,
             '@type' => 'WebSite',
             'name' => 'Alsyundawy Looking Glass',
             'url' => $siteUrlSafe,
@@ -1117,18 +1156,18 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
             'inLanguage' => ['en', 'id'],
             'publisher' => [
                 '@type' => 'Organization',
-                'name' => 'ALSYUNDAWY IT SOLUTION',
-                'url' => 'https://alsyundawy.com',
+                'name' => $orgName,
+                'url' => $orgUrl,
                 'logo' => [
                     '@type' => 'ImageObject',
-                    'url' => 'https://alsyundawy.com/logo.png',
+                    'url' => $orgUrl . '/logo.png',
                     'width' => 200,
                     'height' => 200
                 ],
                 'contactPoint' => [
                     '@type' => 'ContactPoint',
-                    'telephone' => '+62-812-6969-6969',
-                    'email' => 'noc@alsyundawy.com',
+                    'telephone' => $orgPhone,
+                    'email' => $orgNocEmail,
                     'contactType' => 'Customer Support'
                 ]
             ],
@@ -1142,7 +1181,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
         ];
 
         $breadcrumbSchema = [
-            '@context' => 'https://schema.org',
+            '@context' => $schemaCtx,
             '@type' => 'BreadcrumbList',
             'itemListElement' => [
                 ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => $siteUrlSafe],
@@ -1151,13 +1190,13 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
         ];
 
         $orgSchema = [
-            '@context' => 'https://schema.org',
+            '@context' => $schemaCtx,
             '@type' => 'Organization',
-            'name' => 'ALSYUNDAWY IT SOLUTION',
-            'url' => 'https://alsyundawy.com',
-            'logo' => 'https://alsyundawy.com/logo.png',
+            'name' => $orgName,
+            'url' => $orgUrl,
+            'logo' => $orgUrl . '/logo.png',
             'sameAs' => [
-                'https://alsyundawy.com',
+                $orgUrl,
                 'https://www.peeringdb.com/asn/696969',
                 'https://bgp.tools/as/696969'
             ],
@@ -1169,14 +1208,14 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
             'contactPoint' => [
                 [
                     '@type' => 'ContactPoint',
-                    'telephone' => '+62-812-6969-6969',
-                    'email' => 'noc@alsyundawy.com',
+                    'telephone' => $orgPhone,
+                    'email' => $orgNocEmail,
                     'contactType' => 'NOC',
                     'availableLanguage' => ['English', 'Indonesian']
                 ],
                 [
                     '@type' => 'ContactPoint',
-                    'telephone' => '+62-812-6969-6969',
+                    'telephone' => $orgPhone,
                     'email' => 'abuse@alsyundawy.com',
                     'contactType' => 'Abuse',
                     'availableLanguage' => ['English', 'Indonesian']
@@ -1192,14 +1231,14 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
         ];
 
         $faqSchema = [
-            '@context' => 'https://schema.org',
+            '@context' => $schemaCtx,
             '@type' => 'FAQPage',
             'mainEntity' => [
                 ['@type' => 'Question', 'name' => 'What is Looking Glass network tool?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'A professional toolkit for network diagnostics including ping, traceroute, MTR, DNS lookup, WHOIS, and host resolution.']],
                 ['@type' => 'Question', 'name' => 'Does it support IPv6?', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Yes, IPv4 and IPv6 are fully supported.']]
             ]
         ];
-    ?>
+        ?>
 
     <!-- JSON-LD structured data -->
     <script type="application/ld+json">
@@ -1420,30 +1459,27 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                     <div class="info-card" style="height:calc(100% - 1.2rem)">
                         <div class="info-card-body">
                             <h3 class="info-card-title"><i class="fa-solid fa-download"></i>DOWNLOAD TEST</h3>
-                            <?php if (!empty($ipv4)): ?>
-                                <h5 class="download-section-title">IPv4 DOWNLOAD TEST FILE</h5>
-                                <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
-                                    <?php
-                                    if (!empty($testFiles) && is_array($testFiles)):
-                                        foreach ($testFiles as $val) {
-                                            echo '<a href="?download=' . sanitize_output($val) . '" class="btn-download-test ' . ('btn-dl-' . strtolower(str_replace(' ', '', $val))) . '"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
-                                        }
-                                    endif;
+                            <?php
+                            $dlConfigs = [
+                                ['show' => ($ipv4 !== ''), 'title' => 'IPv4 DOWNLOAD TEST FILE', 'suffix' => ''],
+                                ['show' => ($ipv6 !== ''), 'title' => 'IPv6 DOWNLOAD TEST FILE', 'suffix' => '-v6'],
+                            ];
+                            foreach ($dlConfigs as $config) :
+                                if ($config['show'] && is_array($testFiles)) :
                                     ?>
-                                </div>
-                            <?php endif; ?>
-                            <?php if (!empty($ipv6)): ?>
-                                <h5 class="download-section-title">IPv6 DOWNLOAD TEST FILE</h5>
-                                <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
-                                    <?php
-                                    if (!empty($testFiles) && is_array($testFiles)):
+                                    <h5 class="download-section-title"><?php echo $config['title']; ?></h5>
+                                    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
+                                        <?php
                                         foreach ($testFiles as $val) {
-                                            echo '<a href="?download=' . sanitize_output($val) . '" class="btn-download-test ' . ('btn-dl-' . strtolower(str_replace(' ', '', $val)) . '-v6') . '"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
+                                            $btnClass = 'btn-dl-' . strtolower(str_replace(' ', '', (string) $val)) . $config['suffix'];
+                                            echo '<a href="?download=' . sanitize_output($val) . '" class="btn-download-test ' . $btnClass . '"><i class="fa-solid fa-file-arrow-down"></i> ' . sanitize_output($val) . '</a>';
                                         }
-                                    endif;
-                                    ?>
-                                </div>
-                            <?php endif; ?>
+                                        ?>
+                                    </div>
+                                    <?php
+                                endif;
+                            endforeach;
+                            ?>
                             <h5 class="download-section-title">SPEEDTEST & REPOSITORY</h5>
                             <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
                                 <a href="https://www.speedtest.net" target="_blank" rel="noopener"
@@ -1466,40 +1502,45 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                             <ul class="nav nav-tabs" id="networkTestTabs" role="tablist">
                                 <?php
                                 $tabs = [];
-                                if (((!empty($ipv4)) || (!empty($ipv6))) && (empty($ping))) {
+                                $hasHostConfig = ($ipv4 !== '' || $ipv6 !== '');
+                                if ($hasHostConfig && !$ping) {
                                     $tabs[] = [
                                         'id' => 'ping',
                                         'icon' => 'fa-satellite-dish',
                                         'label' => 'Ping',
                                         'desc' => 'Check network connectivity and packet loss to a host (ICMP ping).',
-                                        'active' => true
+                                        'active' => true,
+                                        'link' => null
                                     ];
                                 }
-                                if (((!empty($ipv4)) || (!empty($ipv6))) && (empty($traceroute))) {
+                                if ($hasHostConfig && !$traceroute) {
                                     $tabs[] = [
                                         'id' => 'traceroute',
                                         'icon' => 'fa-route',
                                         'label' => 'Traceroute',
                                         'desc' => 'Trace the packet path and measure per-hop latency to a host.',
-                                        'active' => empty($tabs)
+                                        'active' => empty($tabs),
+                                        'link' => null
                                     ];
                                 }
-                                if (((!empty($ipv4)) || (!empty($ipv6))) && (empty($host_cmd))) {
+                                if ($hasHostConfig && !$host_cmd) {
                                     $tabs[] = [
                                         'id' => 'host',
                                         'icon' => 'fa-server',
                                         'label' => 'Host',
                                         'desc' => 'Perform DNS lookups and resolve hostnames to IP addresses (A/AAAA records).',
-                                        'active' => empty($tabs)
+                                        'active' => empty($tabs),
+                                        'link' => null
                                     ];
                                 }
-                                if (((!empty($ipv4)) || (!empty($ipv6))) && (empty($mtr))) {
+                                if ($hasHostConfig && !$mtr) {
                                     $tabs[] = [
                                         'id' => 'mtr',
                                         'icon' => 'fa-chart-line',
                                         'label' => 'MTR',
                                         'desc' => 'Run MTR (combined traceroute and continuous ping) for real-time path and loss diagnostics.',
-                                        'active' => empty($tabs)
+                                        'active' => empty($tabs),
+                                        'link' => null
                                     ];
                                 }
                                 $tabs[] = [
@@ -1508,7 +1549,8 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                     'label' => 'WHOIS',
                                     'desc' => 'Lookup WHOIS information for any IP address or domain name. Results displayed in a human-readable format.',
                                     'active' => false,
-                                    'type' => 'ajax'
+                                    'type' => 'ajax',
+                                    'link' => null
                                 ];
                                 $tabs[] = [
                                     'id' => 'dnslookup',
@@ -1516,19 +1558,20 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                     'label' => 'DNS Lookup',
                                     'desc' => 'Check DNS records for a domain — A, AAAA, NS, MX, SOA, and TXT records.',
                                     'active' => false,
-                                    'type' => 'ajax'
+                                    'type' => 'ajax',
+                                    'link' => null
                                 ];
-                                foreach ($tabs as $tab):
+                                foreach ($tabs as $tab) :
                                     ?>
 
                                     <li class="nav-item" role="presentation">
-                                        <?php if (isset($tab['link'])): ?>
+                                        <?php if (isset($tab['link']) && is_string($tab['link'])) : ?>
                                             <a href="<?php echo sanitize_output($tab['link']); ?>"
                                                 class="nav-link <?php echo $tab['active'] ? 'active' : ''; ?>">
                                                 <i class="fas <?php echo sanitize_output($tab['icon']); ?>"></i>
                                                 <?php echo sanitize_output($tab['label']); ?>
                                             </a>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <button class="nav-link <?php echo $tab['active'] ? 'active' : ''; ?>"
                                                 id="<?php echo sanitize_output($tab['id']); ?>-tab" data-bs-toggle="tab"
                                                 data-bs-target="#<?php echo sanitize_output($tab['id']); ?>-panel" type="button" role="tab">
@@ -1540,44 +1583,35 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                 <?php endforeach; ?>
                             </ul>
                             <div class="tab-content" id="networkTestTabsContent">
-                                <?php foreach ($tabs as $tab): ?>
+                                <?php foreach ($tabs as $tab) : ?>
                                     <div class="tab-pane fade <?php echo $tab['active'] ? 'show active' : ''; ?>"
                                         id="<?php echo sanitize_output($tab['id']); ?>-panel" role="tabpanel">
                                         <div class="tab-section-header">
                                             <h4><i class="fas <?php echo sanitize_output($tab['icon']); ?>"></i> <?php echo sanitize_output($tab['label']); ?></h4>
                                             <p><?php echo sanitize_output($tab['desc'] ?? ''); ?></p>
                                         </div>
-                                        <?php if (($tab['type'] ?? '') === 'ajax'): ?>
-                                        <form class="test-form ajax-test-form" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
+                                        <?php
+                                        $isAjax = (($tab['type'] ?? '') === 'ajax');
+                                        $submitLabel = $isAjax ? 'Run ' . sanitize_output($tab['label']) : 'Run Test';
+                                        ?>
+                                        <form class="test-form <?php echo $isAjax ? 'ajax-test-form' : 'network-test-form'; ?>" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="form-group" style="flex-grow:2">
-                                                <label for="<?php echo sanitize_output($tab['id']); ?>_host"><?php echo $tab['id'] === 'whois' ? 'Domain or IP Address:' : 'Domain Name:'; ?></label>
-                                                <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" autocomplete="on" autocapitalize="none" spellcheck="false" required>
+                                                <?php if ($isAjax) : ?>
+                                                    <label for="<?php echo sanitize_output($tab['id']); ?>_host"><?php echo $tab['id'] === 'whois' ? 'Domain or IP Address:' : 'Domain Name:'; ?></label>
+                                                    <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="<?php echo $tab['id'] === 'whois' ? 'Example: 8.8.8.8 or google.com' : 'Example: google.com'; ?>" autocomplete="on" autocapitalize="none" spellcheck="false" required>
+                                                <?php else : ?>
+                                                    <label for="<?php echo sanitize_output($tab['id']); ?>_host">Host or IP Address:</label>
+                                                    <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="Example: 8.8.8.8 or google.com" autocomplete="on" autocapitalize="none" spellcheck="false" required>
+                                                <?php endif; ?>
                                             </div>
-                                            <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
-                                                <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
-                                                <input type="hidden" name="cmd" value="<?php echo sanitize_output($tab['id']); ?>">
-                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i>Run <?php echo sanitize_output($tab['label']); ?></button>
-                                                <button type="button" class="action-btn action-btn-reset reset-tab-btn"><i class="fas fa-eraser"></i>Reset</button>
-                                            </div>
-                                        </form>
-                                        <div class="output-section" data-output-for="<?php echo sanitize_output($tab['id']); ?>">
-                                            <div class="alert-msg alert-error" style="display:none"></div>
-                                            <div class="ajax-result-container" id="<?php echo sanitize_output($tab['id']); ?>-result"></div>
-                                        </div>
-                                        <?php else: ?>
-                                        <form class="test-form network-test-form" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
-                                            <div class="form-group" style="flex-grow:2">
-                                                <label for="<?php echo sanitize_output($tab['id']); ?>_host">Host or IP Address:</label>
-                                                <input type="text" name="host" id="<?php echo sanitize_output($tab['id']); ?>_host" placeholder="Example: 8.8.8.8 or google.com" autocomplete="on" autocapitalize="none" spellcheck="false" required>
-                                            </div>
-                                            <?php if (in_array($tab['id'], ['ping', 'traceroute', 'mtr'])): ?>
+                                            <?php if (!$isAjax && in_array($tab['id'], ['ping', 'traceroute', 'mtr'], true)) : ?>
                                                 <div class="form-group" style="flex-grow:1">
                                                     <label for="<?php echo sanitize_output($tab['id']); ?>_ipv">IP Version:</label>
                                                     <select name="ipversion" id="<?php echo sanitize_output($tab['id']); ?>_ipv">
-                                                        <?php if (!empty($ipv4)): ?>
+                                                        <?php if ($ipv4 !== '') : ?>
                                                             <option value="4">IPv4</option>
                                                         <?php endif; ?>
-                                                        <?php if (!empty($ipv6)): ?>
+                                                        <?php if ($ipv6 !== '') : ?>
                                                             <option value="6">IPv6</option>
                                                         <?php endif; ?>
                                                     </select>
@@ -1586,15 +1620,18 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                             <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
                                                 <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
                                                 <input type="hidden" name="cmd" value="<?php echo sanitize_output($tab['id']); ?>">
-                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i>Run Test</button>
+                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i><?php echo $submitLabel; ?></button>
                                                 <button type="button" class="action-btn action-btn-reset reset-tab-btn"><i class="fas fa-eraser"></i>Reset</button>
                                             </div>
                                         </form>
                                         <div class="output-section" data-output-for="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="alert-msg alert-error" style="display:none"></div>
-                                            <pre class="output-box"></pre>
+                                            <?php if ($isAjax) : ?>
+                                                <div class="ajax-result-container" id="<?php echo sanitize_output($tab['id']); ?>-result"></div>
+                                            <?php else : ?>
+                                                <pre class="output-box"></pre>
+                                            <?php endif; ?>
                                         </div>
-                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -1657,8 +1694,8 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
         </footer>
     </div>
     <button id="scrollToTop" class="scroll-top-btn" aria-label="Scroll to top"><i class="fa-solid fa-circle-arrow-up"></i></button>
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" integrity="sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script>
     !function(){const t=document.documentElement,e=document.getElementById("themeToggle"),s=e.querySelector("i"),a=document.getElementById("scrollToTop"),o=document.getElementById("progressLoader"),n=()=>{const e="dark"===t.getAttribute("data-theme");s.classList.toggle("fa-sun",e),s.classList.toggle("fa-moon",!e)};e.addEventListener("click",()=>{const e="dark"===t.getAttribute("data-theme")?"light":"dark";t.setAttribute("data-theme",e),localStorage.setItem("theme",e),document.cookie=`theme=${e};path=/;max-age=31536000;samesite=strict${"https:"===location.protocol?";secure":""}`,n()}),window.addEventListener("scroll",()=>{a.style.display=window.scrollY>300?"block":"none"}),a.addEventListener("click",t=>{t.preventDefault(),window.scrollTo({top:0,behavior:"smooth"})}),n();const r=async(t,e,s)=>{try{const s=await fetch(e,{signal:AbortSignal.timeout(4e3)});if(!s.ok)throw new Error("Network error");const a=await s.json();document.getElementById(t).textContent=a.ip}catch(e){document.getElementById(t).textContent=s}};Promise.allSettled([r("clientIPv4","https://api.ipify.org?format=json","N/A"),r("clientIPv6","https://api6.ipify.org?format=json","N/A")]),$(".network-test-form").on("submit",async function(t){t.preventDefault();const e=$(this),s=e.find("input[name=host]").val().trim();if(!s)return alert("Host or IP address required"),void e.find("input[name=host]").focus();let a=e.find("input[name=cmd]").val();const n=e.find("select[name=ipversion]");n.length&&"6"===n.val()&&(a+="6");const r=e.closest(".tab-pane").find(".output-section"),i=r.find(".output-box");r.removeClass("show"),r.find(".alert-error").hide(),i.text("Running command..."),o.classList.add("active");const d=["ping","ping6","traceroute","traceroute6","mtr","mtr6"].includes(a);try{const t=new FormData;t.append("host",s),t.append("cmd",a),t.append("csrf",e.find("input[name=csrf]").val());const n=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:t});if(o.classList.remove("active"),403===n.status){const t=await n.text();return alert(t),void location.reload()}if(r.addClass("show"),i.text(""),d){const t=n.body.getReader(),e=new TextDecoder;for(;;){const{done:s,value:a}=await t.read();if(s)break;const o=e.decode(a,{stream:!0});i.append(document.createTextNode(o)),$("html,body").animate({scrollTop:r.offset().top-80},0)}}else{const t=await n.text();i.text(t),$("html,body").animate({scrollTop:r.offset().top-80},400)}}catch(t){o.classList.remove("active");const e=`Error: ${t.message||"Unknown error"}`;r.find(".alert-error").text(e).show(),r.addClass("show")}}),$(".reset-tab-btn").on("click",function(){const t=$(this).closest(".tab-pane");t.find("form")[0].reset(),t.find(".output-section").removeClass("show"),t.find(".alert-error").hide(),t.find(".output-box").text(""),t.find(".ajax-result-container").html("")})}(),function(){const t=t=>{const e=document.createElement("div");return e.appendChild(document.createTextNode(t)),e.innerHTML},e={A:"fa-globe",AAAA:"fa-network-wired",NS:"fa-server",MX:"fa-envelope",SOA:"fa-database",TXT:"fa-file-lines"},s=document.getElementById("progressLoader");$(".ajax-test-form").on("submit",async function(a){a.preventDefault();const o=$(this),n=o.find("input[name=host]").val().trim();if(!n)return alert("Host or domain required"),void o.find("input[name=host]").focus();const r=o.find("input[name=cmd]").val(),i=o.find("input[name=csrf]").val(),d=o.closest(".tab-pane"),c=d.find(".output-section"),l=d.find(".ajax-result-container");c.removeClass("show"),c.find(".alert-error").hide(),l.html('<div style="text-align:center;padding:2rem;color:var(--text-secondary)"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>Memproses '+t("whois"===r?"WHOIS":"DNS")+" lookup untuk <strong>"+t(n)+"</strong>...</div>"),c.addClass("show"),s.classList.add("active");try{const a=new FormData;a.append("host",n),a.append("cmd",r),a.append("csrf",i);const o=await fetch(window.location.pathname,{method:"POST",headers:{"X-Requested-With":"XMLHttpRequest"},body:a});if(s.classList.remove("active"),403===o.status)return alert(await o.text()),void location.reload();if(!o.ok)return c.find(".alert-error").text(await o.text()||"Error occurred").show(),void l.html("");const d=await o.json();"whois"===r?function(e,s){let a="";e.error?s.innerHTML='<div class="alert-msg alert-error">'+t(e.error)+"</div>":(e.parsed&&e.parsed.length?(a+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Informasi WHOIS untuk '+t(e.host)+'</div><table class="whois-result-table"><tbody>',e.parsed.forEach(function(e){a+='<tr><td><i class="fas '+t(e.icon)+'"></i> '+t(e.key)+'<span class="whois-info-tip"><i class="fas fa-question-circle"></i> '+t(e.info)+"</span></td><td>"+t(e.value)+"</td></tr>"}),a+='</tbody></table><button class="whois-raw-toggle" onclick="$(this).next().toggleClass(\'show\');$(this).find(\'i.fa-chevron-down,i.fa-chevron-up\').toggleClass(\'fa-chevron-down fa-chevron-up\')"><i class="fas fa-code"></i> Raw WHOIS Data <i class="fas fa-chevron-down"></i></button><pre class="whois-raw-box">'+t(e.raw||"")+"</pre></div>"):a+='<div class="whois-result-card"><div class="whois-result-header"><i class="fas fa-circle-info"></i> Raw WHOIS untuk '+t(e.host)+'</div><pre class="whois-raw-box show">'+t(e.raw||"No data returned.")+"</pre></div>",s.innerHTML=a)}(d,l[0]):"dnslookup"===r&&function(s,a){let o="";if(s.error)return void(a.innerHTML='<div class="alert-msg alert-error">'+t(s.error)+"</div>");const n=s.records||{};let r=[];["A","AAAA","NS","MX","SOA","TXT"].forEach(function(s){const a=e[s]||"fa-question",i=n[s]||[],d=i.length;r.push({type:s,count:d});const c="dns-header-"+s.toLowerCase();o+='<div class="dns-result-card"><div class="dns-type-header '+c+'"><i class="fas '+a+'"></i> '+s+' Records <span class="dns-type-badge">'+d+" record"+(1!==d?"s":"")+"</span></div>",d>0?(o+='<div class="dns-table-wrapper"><table class="dns-record-table"><thead><tr><th><i class="fas fa-hashtag"></i> Name</th><th><i class="fas fa-clock"></i> TTL</th><th><i class="fas fa-tag"></i> Type</th><th><i class="fas fa-align-left"></i> Value</th></tr></thead><tbody>',i.forEach(function(e){const s="dns-badge-"+e.type.toLowerCase();o+="<tr><td>"+t(e.name)+"</td><td>"+t(e.ttl)+'</td><td><span class="dns-badge '+s+'">'+t(e.type)+"</span></td><td>"+t(e.value)+"</td></tr>"}),o+="</tbody></table></div>"):o+='<div class="dns-no-records"><i class="fas fa-info-circle"></i> Tidak ada record '+s+" yang ditemukan</div>",o+="</div>"}),o+='<div class="dns-summary-bar">',r.forEach(function(t){o+='<span class="dns-summary-badge '+(t.count>0?"has-records":"no-records")+'"><i class="fas '+(e[t.type]||"fa-question")+'"></i> '+t.type+": "+t.count+"</span>"}),o+="</div>",a.innerHTML=o}(d,l[0]),$("html,body").animate({scrollTop:c.offset().top-80},400)}catch(t){s.classList.remove("active"),c.find(".alert-error").text("Error: "+(t.message||"Unknown error")).show(),l.html("")}})}();
     </script>

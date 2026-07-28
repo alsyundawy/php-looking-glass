@@ -1,7 +1,7 @@
 ---
 name: Super-Linter
 
-'on':
+"on":
   push:
     branches: [main, master]
   pull_request:
@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Super-Linter
-        uses: super-linter/super-linter@v8
+        uses: super-linter/super-linter@v8.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: main

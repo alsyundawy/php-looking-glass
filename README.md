@@ -30,7 +30,7 @@
 
 ### User Interface
 
-#### Version 1.1.0 (Latest)
+#### Version 1.1.0-FIX (Latest)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -40,13 +40,13 @@
 
 ## Features
 
-| Category | Details |
-| --- | --- |
-| 🌐 **Network Diagnostics** | Ping (ICMP), Traceroute, MTR, Host, WHOIS Lookup, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
-| ⚡ **Performance Testing** | Iperf3 (TCP/UDP/Reverse), Customizable binary download tests |
-| 🎨 **Modern UI** | Fully responsive (Mobile to 4K), Dark/Light mode toggle, Real-time client IP detection |
-| 🔒 **Security** | CSRF protection, `proc_open()` argv (no shell interpolation), CSP headers, strict input validation |
-| 🚀 **Easy Deployment** | Single PHP file · No database · No Composer · PHP 8.1+ |
+| Category                   | Details                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| 🌐 **Network Diagnostics** | Ping (ICMP), Traceroute, MTR, Host, WHOIS Lookup, DNS Lookup (A/AAAA/NS/MX/SOA/TXT)                |
+| ⚡ **Performance Testing** | Iperf3 (TCP/UDP/Reverse), Customizable binary download tests                                       |
+| 🎨 **Modern UI**           | Fully responsive (Mobile to 4K), Dark/Light mode toggle, Real-time client IP detection             |
+| 🔒 **Security**            | CSRF protection, `proc_open()` argv (no shell interpolation), CSP headers, strict input validation |
+| 🚀 **Easy Deployment**     | Single PHP file · No database · No Composer · PHP 8.1+                                             |
 
 ## Requirements
 
@@ -101,7 +101,7 @@ server {
     # Listen on port 80 for both IPv4 and IPv6
     listen 80;
     listen [::]:80;
-    
+
     server_name lg.yourdomain.com;
     root /var/www/html/lg;
     index index.php;
@@ -111,7 +111,7 @@ server {
     # =========================================================================
     # Allow large file uploads/downloads (Critical for Speedtest/Download Test)
     client_max_body_size 4096M;
-    
+
     # Extended timeouts for long-running processes (MTR, Traceroute)
     client_header_timeout 86400;
     client_body_timeout 86400;
@@ -282,13 +282,13 @@ Secure your Looking Glass with HTTPS using Let's Encrypt.
 
 **Install Certbot:**
 
-*Debian/Ubuntu:*
+_Debian/Ubuntu:_
 
 ```bash
 sudo apt-get install certbot python3-certbot-nginx python3-certbot-apache -y
 ```
 
-*CentOS/RHEL:*
+_CentOS/RHEL:_
 
 ```bash
 sudo dnf install certbot python3-certbot-nginx python3-certbot-apache -y
@@ -296,13 +296,13 @@ sudo dnf install certbot python3-certbot-nginx python3-certbot-apache -y
 
 **Run Certbot:**
 
-*For Nginx:*
+_For Nginx:_
 
 ```bash
 sudo certbot --nginx -d lg.yourdomain.com
 ```
 
-*For Apache:*
+_For Apache:_
 
 ```bash
 sudo certbot --apache -d lg.yourdomain.com
@@ -445,68 +445,68 @@ $testFiles = array('250MB', '500MB', '1GB'); // Download test file sizes (files 
 
 Find the `<header class="header">` section (~line 641) and update the contact details:
 
-| Item | What to change |
-| ------ | ---------------- |
-| Phone number | `+62-812-6969-6969` (appears in desktop and mobile header) |
-| Email address | `info@alsyundawy.com` (mailto link) |
-| WhatsApp number | `6281269696969` in `wa.me/` link |
-| Website URL | `https://www.alsyundawy.com` |
+| Item            | What to change                                             |
+| --------------- | ---------------------------------------------------------- |
+| Phone number    | `+62-812-6969-6969` (appears in desktop and mobile header) |
+| Email address   | `info@alsyundawy.com` (mailto link)                        |
+| WhatsApp number | `6281269696969` in `wa.me/` link                           |
+| Website URL     | `https://www.alsyundawy.com`                               |
 
 ### 3. Navigation Links
 
 Find the `<nav class="main-nav">` section (~line 680) and update the links:
 
-| Item | What to change |
-| ------ | ---------------- |
+| Item          | What to change                   |
+| ------------- | -------------------------------- |
 | WhatsApp link | `https://wa.me/62-812-6969-6969` |
-| Telegram link | `https://t.me/alsyundawy` |
-| GitHub link | `https://github.com/alsyundawy` |
-| Website link | `https://www.alsyundawy.com` |
-| Contact email | `mailto:info@alsyundawy.com` |
+| Telegram link | `https://t.me/alsyundawy`        |
+| GitHub link   | `https://github.com/alsyundawy`  |
+| Website link  | `https://www.alsyundawy.com`     |
+| Contact email | `mailto:info@alsyundawy.com`     |
 
 ### 4. JSON-LD Structured Data (SEO)
 
 Find the `JSON-LD via json_encode()` section (~line 440) and update the organization data:
 
-| Item | What to change |
-| ------ | ---------------- |
+| Item              | What to change                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------- |
 | Organization name | `ALSYUNDAWY IT SOLUTION` (appears in `$appSchema`, `$websiteSchema`, `$orgSchema`) |
-| Organization URL | `https://alsyundawy.com` |
-| Phone number | `+62-812-6969-6969` |
-| NOC email | `noc@alsyundawy.com` |
-| Abuse email | `abuse@alsyundawy.com` |
-| AS Number | `AS696969` and `696969` (appears in PeeringDB, BGP.tools URLs and identifier) |
-| Street address | Full postal address in `$orgSchema` |
-| Logo URL | `https://alsyundawy.com/logo.png` |
+| Organization URL  | `https://alsyundawy.com`                                                           |
+| Phone number      | `+62-812-6969-6969`                                                                |
+| NOC email         | `noc@alsyundawy.com`                                                               |
+| Abuse email       | `abuse@alsyundawy.com`                                                             |
+| AS Number         | `AS696969` and `696969` (appears in PeeringDB, BGP.tools URLs and identifier)      |
+| Street address    | Full postal address in `$orgSchema`                                                |
+| Logo URL          | `https://alsyundawy.com/logo.png`                                                  |
 
 ### 5. Footer
 
 Find the `<footer class="site-footer">` section (~line 989) and update:
 
-| Item | What to change |
-| ------ | ---------------- |
-| Company name | `ALSYUNDAWY IT SOLUTION` |
-| AS Number | `AS696969` (in copyright text and info links) |
-| Designer credit | `HARRY DERTIN SUTISNA ALSYUNDAWY` |
-| Info links | RIPESTAT, HE.NET, BGP.Tools, ROBTEX, PEERINGDB, IPinfo, ASRank URLs (replace `696969` with your ASN) |
+| Item            | What to change                                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| Company name    | `ALSYUNDAWY IT SOLUTION`                                                                             |
+| AS Number       | `AS696969` (in copyright text and info links)                                                        |
+| Designer credit | `HARRY DERTIN SUTISNA ALSYUNDAWY`                                                                    |
+| Info links      | RIPESTAT, HE.NET, BGP.Tools, ROBTEX, PEERINGDB, IPinfo, ASRank URLs (replace `696969` with your ASN) |
 
 ### 6. Social Media Links
 
 Find the `<div class="social-links">` section in the footer (~line 1013) and update all social media URLs:
 
-| Platform | URL to change |
-| ---------- | --------------- |
-| GitHub | `https://github.com/alsyundawy` |
-| LinkedIn | `https://linkedin.com/in/alsyundawy` |
-| Twitter/X | `https://twitter.com/alsyundawy` |
-| Facebook | `https://facebook.com/alsyundawy` |
-| Instagram | `https://instagram.com/harry.ds.alsyundawy` |
-| YouTube | `https://youtube.com/alsyundawy` |
-| TikTok | `https://tiktok.com/alsyundawy` |
-| Threads | `https://threads.net/alsyundawy` |
-| Discord | `https://discord.gg/alsyundawy` |
-| Telegram | `https://t.me/alsyundawy` |
-| WhatsApp | `https://wa.me/628126969696` *(numeric only — no `+` or `-`)* |
+| Platform  | URL to change                                                 |
+| --------- | ------------------------------------------------------------- |
+| GitHub    | `https://github.com/alsyundawy`                               |
+| LinkedIn  | `https://linkedin.com/in/alsyundawy`                          |
+| Twitter/X | `https://twitter.com/alsyundawy`                              |
+| Facebook  | `https://facebook.com/alsyundawy`                             |
+| Instagram | `https://instagram.com/harry.ds.alsyundawy`                   |
+| YouTube   | `https://youtube.com/alsyundawy`                              |
+| TikTok    | `https://tiktok.com/alsyundawy`                               |
+| Threads   | `https://threads.net/alsyundawy`                              |
+| Discord   | `https://discord.gg/alsyundawy`                               |
+| Telegram  | `https://t.me/alsyundawy`                                     |
+| WhatsApp  | `https://wa.me/628126969696` _(numeric only — no `+` or `-`)_ |
 
 ## Image & Logo Customization
 
@@ -568,6 +568,23 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.1.0-FIX — 2026-07-29 🛠️ Maintenance & Scanner Compliance
+
+- **[Fix]** Fixed Checkov `CKV2_GHA_1` workflow top-level security permissions across `devskim.yml` and `codeql.yml`.
+- **[Fix]** Fixed DevSkim `DS137138` (HTTP URL scheme in `parse_url`) and `DS162092` (`localhost` string artifact).
+- **[Security]** Upgraded Grype Super-Linter GitHub Action vulnerability bump to `@v8.3.1`.
+- **[Security]** Added Subresource Integrity (`integrity="sha384-..."`) and `crossorigin="anonymous"` attributes to all CDN CSS and JS resources (PureCSS, Bootstrap, FontAwesome, jQuery, Bootstrap JS).
+- **[Fix]** Fixed djlint `H030` & `H031` HTML meta description and keyword tags on error pages `400.html` through `504.html`.
+- **[Fix]** Added standard `background-clip: text;` CSS property alongside `-webkit-background-clip: text;` on error pages.
+- **[Fix]** Fixed JSCPD duplicate code blocks by refactoring download test cards and test forms into unified loops.
+- **[Fix]** Fixed Lychee link checker root-relative link resolution on HTML error pages using `./`.
+- **[Fix]** Fixed PHPCS header spacing, control structure colon spacing, and indentation in `index.php`.
+- **[Fix]** Fixed Psalm type assertions, boolean `!empty` checks, session status verification, and strict superglobal type handling.
+- **[Fix]** Fixed `v8r` and `yamllint` `dependabot.yml` schema validation and unneeded string quotes across workflow files.
+- **[Fix]** Renamed utility function `find_binary()` to camelCase `findBinary()` for strict linter compliance.
+
+---
 
 ### v1.1.0 — 2026-07-18 🔧 Bug Fixes & Security
 

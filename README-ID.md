@@ -29,7 +29,7 @@
 
 ### Tampilan Antarmuka
 
-#### Versi 1.1.0 (Terbaru)
+#### Versi 1.1.0-FIX (Terbaru)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -39,13 +39,13 @@
 
 ## Fitur
 
-| Kategori | Detail |
-| --- | --- |
-| 🌐 **Diagnostik Jaringan** | Ping (ICMP), Traceroute, MTR, Host, Pencarian WHOIS, DNS Lookup (A/AAAA/NS/MX/SOA/TXT) |
-| ⚡ **Pengujian Performa** | Iperf3 (TCP/UDP/Reverse), Uji unduhan file biner yang dapat dikustomisasi |
-| 🎨 **Antarmuka Modern** | Responsif penuh (Mobile hingga 4K), Toggle mode Gelap/Terang, Deteksi IP klien real-time |
-| 🔒 **Keamanan** | Perlindungan CSRF, `proc_open()` argv (tanpa interpolasi shell), header CSP, validasi input ketat |
-| 🚀 **Mudah Dipasang** | Satu file PHP · Tanpa database · Tanpa Composer · PHP 8.1+ |
+| Kategori                   | Detail                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| 🌐 **Diagnostik Jaringan** | Ping (ICMP), Traceroute, MTR, Host, Pencarian WHOIS, DNS Lookup (A/AAAA/NS/MX/SOA/TXT)            |
+| ⚡ **Pengujian Performa**  | Iperf3 (TCP/UDP/Reverse), Uji unduhan file biner yang dapat dikustomisasi                         |
+| 🎨 **Antarmuka Modern**    | Responsif penuh (Mobile hingga 4K), Toggle mode Gelap/Terang, Deteksi IP klien real-time          |
+| 🔒 **Keamanan**            | Perlindungan CSRF, `proc_open()` argv (tanpa interpolasi shell), header CSP, validasi input ketat |
+| 🚀 **Mudah Dipasang**      | Satu file PHP · Tanpa database · Tanpa Composer · PHP 8.1+                                        |
 
 ## Persyaratan
 
@@ -100,7 +100,7 @@ server {
     # Mendengarkan port 80 untuk IPv4 dan IPv6
     listen 80;
     listen [::]:80;
-    
+
     server_name lg.yourdomain.com;
     root /var/www/html/lg;
     index index.php;
@@ -110,7 +110,7 @@ server {
     # =========================================================================
     # Izinkan upload/download file besar (Penting untuk Speedtest/Uji Unduhan)
     client_max_body_size 4096M;
-    
+
     # Timeout diperpanjang untuk proses yang berjalan lama (MTR, Traceroute)
     client_header_timeout 86400;
     client_body_timeout 86400;
@@ -281,13 +281,13 @@ Amankan Looking Glass Anda dengan HTTPS menggunakan Let's Encrypt.
 
 **Instal Certbot:**
 
-*Debian/Ubuntu:*
+_Debian/Ubuntu:_
 
 ```bash
 sudo apt-get install certbot python3-certbot-nginx python3-certbot-apache -y
 ```
 
-*CentOS/RHEL:*
+_CentOS/RHEL:_
 
 ```bash
 sudo dnf install certbot python3-certbot-nginx python3-certbot-apache -y
@@ -295,13 +295,13 @@ sudo dnf install certbot python3-certbot-nginx python3-certbot-apache -y
 
 **Jalankan Certbot:**
 
-*Untuk Nginx:*
+_Untuk Nginx:_
 
 ```bash
 sudo certbot --nginx -d lg.yourdomain.com
 ```
 
-*Untuk Apache:*
+_Untuk Apache:_
 
 ```bash
 sudo certbot --apache -d lg.yourdomain.com
@@ -444,68 +444,68 @@ $testFiles = array('250MB', '500MB', '1GB'); // Ukuran file uji unduhan (file ha
 
 Temukan bagian `<header class="header">` (~baris 641) dan perbarui detail kontak:
 
-| Item | Yang perlu diubah |
-| ------ | ------------------- |
-| Nomor telepon | `+62-812-6969-6969` (muncul di header desktop dan mobile) |
-| Alamat email | `info@alsyundawy.com` (tautan mailto) |
-| Nomor WhatsApp | `6281269696969` di tautan `wa.me/` |
-| URL Website | `https://www.alsyundawy.com` |
+| Item           | Yang perlu diubah                                         |
+| -------------- | --------------------------------------------------------- |
+| Nomor telepon  | `+62-812-6969-6969` (muncul di header desktop dan mobile) |
+| Alamat email   | `info@alsyundawy.com` (tautan mailto)                     |
+| Nomor WhatsApp | `6281269696969` di tautan `wa.me/`                        |
+| URL Website    | `https://www.alsyundawy.com`                              |
 
 ### 3. Tautan Navigasi
 
 Temukan bagian `<nav class="main-nav">` (~baris 680) dan perbarui tautan:
 
-| Item | Yang perlu diubah |
-| ------ | ------------------- |
+| Item            | Yang perlu diubah                |
+| --------------- | -------------------------------- |
 | Tautan WhatsApp | `https://wa.me/62-812-6969-6969` |
-| Tautan Telegram | `https://t.me/alsyundawy` |
-| Tautan GitHub | `https://github.com/alsyundawy` |
-| Tautan Website | `https://www.alsyundawy.com` |
-| Email Kontak | `mailto:info@alsyundawy.com` |
+| Tautan Telegram | `https://t.me/alsyundawy`        |
+| Tautan GitHub   | `https://github.com/alsyundawy`  |
+| Tautan Website  | `https://www.alsyundawy.com`     |
+| Email Kontak    | `mailto:info@alsyundawy.com`     |
 
 ### 4. Data Terstruktur JSON-LD (SEO)
 
 Temukan bagian `JSON-LD via json_encode()` (~baris 440) dan perbarui data organisasi:
 
-| Item | Yang perlu diubah |
-| ------ | ------------------- |
+| Item            | Yang perlu diubah                                                                 |
+| --------------- | --------------------------------------------------------------------------------- |
 | Nama organisasi | `ALSYUNDAWY IT SOLUTION` (muncul di `$appSchema`, `$websiteSchema`, `$orgSchema`) |
-| URL organisasi | `https://alsyundawy.com` |
-| Nomor telepon | `+62-812-6969-6969` |
-| Email NOC | `noc@alsyundawy.com` |
-| Email Abuse | `abuse@alsyundawy.com` |
-| Nomor AS | `AS696969` dan `696969` (muncul di URL PeeringDB, BGP.tools dan identifier) |
-| Alamat kantor | Alamat pos lengkap di `$orgSchema` |
-| URL Logo | `https://alsyundawy.com/logo.png` |
+| URL organisasi  | `https://alsyundawy.com`                                                          |
+| Nomor telepon   | `+62-812-6969-6969`                                                               |
+| Email NOC       | `noc@alsyundawy.com`                                                              |
+| Email Abuse     | `abuse@alsyundawy.com`                                                            |
+| Nomor AS        | `AS696969` dan `696969` (muncul di URL PeeringDB, BGP.tools dan identifier)       |
+| Alamat kantor   | Alamat pos lengkap di `$orgSchema`                                                |
+| URL Logo        | `https://alsyundawy.com/logo.png`                                                 |
 
 ### 5. Footer
 
 Temukan bagian `<footer class="site-footer">` (~baris 989) dan perbarui:
 
-| Item | Yang perlu diubah |
-| ------ | ------------------- |
-| Nama perusahaan | `ALSYUNDAWY IT SOLUTION` |
-| Nomor AS | `AS696969` (di teks hak cipta dan tautan info) |
-| Kredit desainer | `HARRY DERTIN SUTISNA ALSYUNDAWY` |
-| Tautan info | URL RIPESTAT, HE.NET, BGP.Tools, ROBTEX, PEERINGDB, IPinfo, ASRank (ganti `696969` dengan ASN Anda) |
+| Item            | Yang perlu diubah                                                                                   |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| Nama perusahaan | `ALSYUNDAWY IT SOLUTION`                                                                            |
+| Nomor AS        | `AS696969` (di teks hak cipta dan tautan info)                                                      |
+| Kredit desainer | `HARRY DERTIN SUTISNA ALSYUNDAWY`                                                                   |
+| Tautan info     | URL RIPESTAT, HE.NET, BGP.Tools, ROBTEX, PEERINGDB, IPinfo, ASRank (ganti `696969` dengan ASN Anda) |
 
 ### 6. Tautan Media Sosial
 
 Temukan bagian `<div class="social-links">` di footer (~baris 1013) dan perbarui semua URL media sosial:
 
-| Platform | URL yang perlu diubah |
-| ---------- | ----------------------- |
-| GitHub | `https://github.com/alsyundawy` |
-| LinkedIn | `https://linkedin.com/in/alsyundawy` |
-| Twitter/X | `https://twitter.com/alsyundawy` |
-| Facebook | `https://facebook.com/alsyundawy` |
-| Instagram | `https://instagram.com/harry.ds.alsyundawy` |
-| YouTube | `https://youtube.com/alsyundawy` |
-| TikTok | `https://tiktok.com/alsyundawy` |
-| Threads | `https://threads.net/alsyundawy` |
-| Discord | `https://discord.gg/alsyundawy` |
-| Telegram | `https://t.me/alsyundawy` |
-| WhatsApp | `https://wa.me/628126969696` *(hanya angka — tanpa `+` atau `-`)* |
+| Platform  | URL yang perlu diubah                                             |
+| --------- | ----------------------------------------------------------------- |
+| GitHub    | `https://github.com/alsyundawy`                                   |
+| LinkedIn  | `https://linkedin.com/in/alsyundawy`                              |
+| Twitter/X | `https://twitter.com/alsyundawy`                                  |
+| Facebook  | `https://facebook.com/alsyundawy`                                 |
+| Instagram | `https://instagram.com/harry.ds.alsyundawy`                       |
+| YouTube   | `https://youtube.com/alsyundawy`                                  |
+| TikTok    | `https://tiktok.com/alsyundawy`                                   |
+| Threads   | `https://threads.net/alsyundawy`                                  |
+| Discord   | `https://discord.gg/alsyundawy`                                   |
+| Telegram  | `https://t.me/alsyundawy`                                         |
+| WhatsApp  | `https://wa.me/628126969696` _(hanya angka — tanpa `+` atau `-`)_ |
 
 ## Kustomisasi Gambar dan Logo
 
@@ -568,6 +568,23 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Catatan Perubahan
 
+### v1.1.0-FIX — 2026-07-29 🛠️ Pemeliharaan & Kepatuhan Pemindai
+
+- **[Perbaikan]** Memperbaiki izin keamanan tingkat atas workflow Checkov `CKV2_GHA_1` pada `devskim.yml` dan `codeql.yml`.
+- **[Perbaikan]** Memperbaiki DevSkim `DS137138` (skema URL HTTP pada `parse_url`) dan `DS162092` (artefak string `localhost`).
+- **[Keamanan]** Memperbarui kerentanan Grype Super-Linter GitHub Action ke `@v8.3.1`.
+- **[Keamanan]** Menambahkan atribut Subresource Integrity (`integrity="sha384-..."`) dan `crossorigin="anonymous"` pada semua sumber daya CDN CSS dan JS (PureCSS, Bootstrap, FontAwesome, jQuery, Bootstrap JS).
+- **[Perbaikan]** Memperbaiki tag meta deskripsi dan kata kunci djlint `H030` & `H031` pada halaman error `400.html` hingga `504.html`.
+- **[Perbaikan]** Menambahkan properti CSS standar `background-clip: text;` berdampingan dengan `-webkit-background-clip: text;` pada halaman error.
+- **[Perbaikan]** Memperbaiki duplikasi kode JSCPD dengan merefaktur kartu tes unduhan dan formulir tes ke dalam loop terpadu.
+- **[Perbaikan]** Memperbaiki resolusi tautan relatif lychee pada halaman error HTML menggunakan `./`.
+- **[Perbaikan]** Memperbaiki spasi header PHPCS, spasi titik dua struktur kontrol, dan indentasi pada `index.php`.
+- **[Perbaikan]** Memperbaiki tipe asersi Psalm, pemeriksaan boolean `!empty`, verifikasi status sesi, dan penanganan tipe superglobal.
+- **[Perbaikan]** Memperbaiki validasi skema `dependabot.yml` pada `v8r` dan `yamllint` serta menghapus tanda kutip tidak perlu pada file workflow.
+- **[Perbaikan]** Mengubah nama fungsi utilitas `find_binary()` menjadi camelCase `findBinary()` demi kepatuhan pemindai linter.
+
+---
+
 ### v1.1.0 — 2026-07-18 🔧 Perbaikan Bug & Keamanan
 
 - **[Perbaikan]** Memperbaiki tautan WhatsApp di footer: mengembalikan format numerasi ilmiah (`wa.me/6.28126969696e+11`) ke format numerik biasa (`wa.me/628126969696`) sesuai spesifikasi API `wa.me`.
@@ -585,10 +602,10 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 - **[Fitur]** Menambahkan `cdn.jsdelivr.net` ke arahan Content-Security-Policy font-src dan connect-src untuk mengizinkan pemuatan ikon Font Awesome dan bootstrap source maps tanpa pelanggaran CSP.
 - **[Fitur]** Menambahkan fungsi helper `find_binary()` untuk mendeteksi lokasi binary utilitas sistem secara dinamis pada path non-standar (misalnya `/usr/local/sbin` untuk `mtr` pada macOS Homebrew).
-- **[Antarmuka]** Meningkatkan UI DNS Lookup: setiap jenis record (A, AAAA, NS, MX, SOA, TXT) kini memiliki header kartu bergradasi lembut (*muted-gradient*) dan badge pil berwarna yang berbeda untuk diferensiasi visual yang lebih baik.
-- **[Antarmuka]** Membedakan tombol uji unduhan IPv4 dan IPv6 (250MB, 500MB, 1GB) serta tombol Speedtest/Repositori dengan skema warna gradasi lembut (*muted-gradient*) yang unik untuk masing-masing kategori.
+- **[Antarmuka]** Meningkatkan UI DNS Lookup: setiap jenis record (A, AAAA, NS, MX, SOA, TXT) kini memiliki header kartu bergradasi lembut (_muted-gradient_) dan badge pil berwarna yang berbeda untuk diferensiasi visual yang lebih baik.
+- **[Antarmuka]** Membedakan tombol uji unduhan IPv4 dan IPv6 (250MB, 500MB, 1GB) serta tombol Speedtest/Repositori dengan skema warna gradasi lembut (_muted-gradient_) yang unik untuk masing-masing kategori.
 - **[Antarmuka]** Mengoptimalkan responsivitas tata letak untuk semua ukuran layar dari 320px hingga 2K; kartu informasi kini bertumpuk secara vertikal pada perangkat tablet/mobile, dan tabel hasil DNS menggunakan pembungkus horizontal agar kolom tidak terpotong.
-- **[Antarmuka]** Mendesain ulang tabel hasil WHOIS: kartu elegan dengan header gradasi indigo-teal, kolom nilai dengan font monospace, baris belang (*zebra-striping*), dan penampil data WHOIS mentah (*raw data*) yang dapat diringkas.
+- **[Antarmuka]** Mendesain ulang tabel hasil WHOIS: kartu elegan dengan header gradasi indigo-teal, kolom nilai dengan font monospace, baris belang (_zebra-striping_), dan penampil data WHOIS mentah (_raw data_) yang dapat diringkas.
 - **[Antarmuka]** Lembutkan semua warna gradasi neon/terang pada badge DNS, header kartu DNS, dan tombol uji unduhan agar tetap terlihat berbeda namun tidak menyebabkan kelelahan mata.
 - **[Optimasi]** Melakukan minifikasi pada aset CSS dan JavaScript di sisi klien menggunakan clean-css dan terser untuk lingkungan produksi, serta melakukan verifikasi sintaks PHP sebelum dan sesudah proses minifikasi.
 
@@ -612,7 +629,7 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 - **[Perbaikan]** Memperbaiki tautan LinkedIn dengan menambahkan segmen `/in/` yang hilang (`linkedin.com/in/alsyundawy`).
 - **[Perbaikan]** Memperbaiki tautan Telegram dengan menggunakan domain yang benar (`t.me/alsyundawy` alih-alih `telegram.org/alsyundawy`).
 - **[Keamanan]** Menambahkan validasi status peluncuran proses (`$result['started']`) pada penangan WHOIS sebelum mengakses stdout/stderr, serta mengembalikan kode status HTTP 500 lebih awal jika binary `whois` gagal dijalankan.
-- **[Fitur]** Mengganti file fisik speedtest di disk dengan generator stream chunked secara langsung (*on-the-fly*) melalui handler `?download=X`. Generator ini membuat data uji berukuran 250MB, 500MB, dan 1GB secara dinamis menggunakan `str_repeat` untuk menghemat ruang penyimpanan disk.
+- **[Fitur]** Mengganti file fisik speedtest di disk dengan generator stream chunked secara langsung (_on-the-fly_) melalui handler `?download=X`. Generator ini membuat data uji berukuran 250MB, 500MB, dan 1GB secara dinamis menggunakan `str_repeat` untuk menghemat ruang penyimpanan disk.
 - **[Fitur]** Memperbarui tautan unduhan pada antarmuka pengguna (UI) agar menggunakan jalur relatif (`?download=...`) alih-alih URL absolut.
 
 ---

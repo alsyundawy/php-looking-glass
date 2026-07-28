@@ -5,7 +5,7 @@ name: MegaLinter
 
 # Trigger mega-linter at every push. Action will also be visible from Pull
 # Requests to main
-'on': # yamllint disable-line rule:truthy - false positive
+"on": # yamllint disable-line rule:truthy - false positive
   # Comment this line to trigger action only on pull-requests
   # (not recommended if you don't pay for GH Actions)
   push:
@@ -63,7 +63,7 @@ jobs:
           #   - Manually re-run the workflow from the GitHub Actions tab, or
           #   - Push another commit on the branch to trigger workflows again.
           # Only define `secrets.PAT` if you fully understand the trade-off.
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false # Comment this line and uncomment the next one if you use APPLY_FIXES
           # persist-credentials: true # zizmor: ignore[artipacked]
 
@@ -159,7 +159,7 @@ jobs:
           # using `secrets.PAT` is NOT recommended for security reasons.
           # Prefer manually re-running the workflow or pushing another
           # commit on the branch to trigger workflows again.
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "[MegaLinter] Apply linters automatic fixes"
           title: "[MegaLinter] Apply linters automatic fixes"
           labels: bot
