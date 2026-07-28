@@ -1,4 +1,4 @@
-name: MegaLinter
+name: Super-Linter
 
 on:
   push:
@@ -13,13 +13,11 @@ concurrency:
 permissions: read-all
 
 jobs:
-  megalinter:
-    name: MegaLinter Scan
+  super-linter:
+    name: Super-Linter Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
-      pull-requests: write
       statuses: write
 
     steps:
@@ -28,18 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: MegaLinter
-        id: ml
-        uses: oxsecurity/megalinter@v9
+      - name: Super-Linter
+        uses: super-linter/super-linter@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: true
-
-      - name: Upload MegaLinter Artifacts
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: MegaLinter-reports
-          path: |
-            megalinter-reports
-            mega-linter.log
+          DEFAULT_BRANCH: main
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_PHP_BUILTIN: true
+          VALIDATE_PHP_PHPCS: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_CSS: true
+          VALIDATE_MARKDOWN: true
+          VALIDATE_YAML: true
+          VALIDATE_JSON: true
+          VALIDATE_BASH: true
