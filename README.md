@@ -1,6 +1,8 @@
+<!-- markdownlint-disable MD013 -->
+
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.1.1-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -30,7 +32,7 @@
 
 ### User Interface
 
-#### Version 1.1.0-FIX (Latest)
+#### Version 1.1.1 (Latest)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -568,6 +570,17 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Changelog
+
+### v1.1.1 — 2026-07-31 🔒 Security & Refactoring
+
+- **[Security]** Applied `sanitize_output()` to `$config['title']` in download test card heading (defence-in-depth XSS mitigation).
+- **[Security]** Applied `sanitize_output()` to `$csrf_token` in CSRF hidden input value (defence-in-depth XSS mitigation).
+- **[Fix]** Fixed double-escaping bug in `$submitLabel`: moved `sanitize_output()` from string assignment to echo points.
+- **[Fix]** Updated deprecated Font Awesome 6 icons: `fa-phone-alt` → `fa-phone`, `fa-shield-alt` → `fa-shield-halved`, `fa-tachometer-alt` → `fa-gauge-high`.
+- **[Fix]** Hardened `$serverLocation` in POST streaming banner using `trim((string) $serverLocation)` for explicit type safety.
+- **[Docs]** Updated `APP_VERSION` constant to `1.1.1`, release date to `2026-07-31`, and updated docblocks across documentation files.
+
+---
 
 ### v1.1.0-FIX — 2026-07-29 🛠️ Maintenance & Scanner Compliance
 

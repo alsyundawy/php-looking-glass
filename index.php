@@ -7,7 +7,7 @@
  * ========================================================================
  *
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.1.0-FIX
+ * @version     : 1.1.1
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -15,7 +15,7 @@
  * @phone       : +62 856-8-515-212 / +62 812-9898-6464
  * @link        : https://github.com/alsyundawy/php-looking-glass
  * @created     : February 16, 2026
- * @modified    : July 29, 2026
+ * @modified    : July 31, 2026
  *
  * CREATED BY:
  * Name        : Harry Dertin Sutisna Alsyundawy
@@ -200,13 +200,30 @@
  *   - Fixed Zizmor GITHUB_TOKEN environment configuration.
  *   - Added background-clip standard CSS property for cross-browser compliance on error pages.
  *
+ * v1.1.1 - 2026-07-31
+ *   - Fixed XSS (defence-in-depth): applied sanitize_output() to
+ *     $config['title'] in download test card heading (L1470).
+ *   - Fixed XSS (defence-in-depth): applied sanitize_output() to
+ *     $csrf_token in CSRF hidden input value (L1621).
+ *   - Fixed double-escaping bug: $submitLabel was constructed with
+ *     sanitize_output() at assignment time then echoed directly;
+ *     refactored to escape at echo point only.
+ *   - Fixed deprecated Font Awesome 6 icons:
+ *       fa-phone-alt      -> fa-phone
+ *       fa-shield-alt     -> fa-shield-halved
+ *       fa-tachometer-alt -> fa-gauge-high
+ *   - Fixed: $serverLocation in POST streaming banner now uses
+ *     trim((string) $serverLocation) for explicit type safety.
+ *   - Updated APP_VERSION to '1.1.1', APP_UPDATED to '2026-07-31'.
+ *   - Updated @version and @modified in file docblock.
+ *
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.1.0-FIX';
-const APP_UPDATED = '2026-07-29';
+const APP_VERSION = '1.1.1';
+const APP_UPDATED = '2026-07-31';
 
 function error_die(string $title, string $message): never
 {
@@ -920,7 +937,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     echo "=======================================================================\n";
     echo '|| Menjalankan: ' . command_to_display($command) . "\n";
-    echo '|| Dari Server: ' . $serverLocation;
+    echo '|| Dari Server: ' . trim((string) $serverLocation);
     echo "\n=======================================================================\n\n";
 
     while (ob_get_level() > 0) {
@@ -1281,7 +1298,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                         <span class="header__title">Looking Glass <span class="highlight2">Network Tools</span></span>
                     </div>
                     <div class="contact-info">
-                        <span><i class="fa-solid fa-phone-alt"></i> +62-812-6969-6969</span>
+                        <span><i class="fa-solid fa-phone"></i> +62-812-6969-6969</span>
                         <span>|</span>
                         <span><i class="fa-solid fa-envelope"></i> <a
                                 href="mailto:info@alsyundawy.com">info@alsyundawy.com</a></span>
@@ -1292,7 +1309,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                 rel="noopener">www.alsyundawy.com</a></span>
                     </div>
                     <div class="contact-info-mobile">
-                        <a href="tel:+62-812-6969-6969" aria-label="Phone"><i class="fa-solid fa-phone-alt"></i></a>
+                        <a href="tel:+62-812-6969-6969" aria-label="Phone"><i class="fa-solid fa-phone"></i></a>
                         <a href="mailto:info@alsyundawy.com" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
                         <a href="https://wa.me/628126969696" target="_blank" rel="noopener" aria-label="WhatsApp"><i
                                 class="fa-brands fa-whatsapp"></i></a>
@@ -1352,7 +1369,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 
                         <li class="nav-item">
                             <a href="https://hetrixtools.com/blacklist-check/" target="_blank" rel="noopener">
-                                <i class="fa-solid fa-shield-alt"></i><span>RBL Checker</span>
+                                <i class="fa-solid fa-shield-halved"></i><span>RBL Checker</span>
                             </a>
                         </li>
 
@@ -1440,7 +1457,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                     <?php if (!empty($iperfport)): ?>
                         <div class="info-card" style="height:calc(100% - 1.2rem)">
                             <div class="info-card-body">
-                                <h3 class="info-card-title"><i class="fas fa-tachometer-alt"></i>IPERF TEST</h3>
+                                <h3 class="info-card-title"><i class="fas fa-gauge-high"></i>IPERF TEST</h3>
                                 <?php if (!empty($ipv4)): ?>
                                     <h5 style="font-weight:700;margin-top:.8rem;font-size:.85rem">IPv4</h5>
                                     <pre class="iperf-cmd-box">iperf3 -c <?php echo sanitize_output($ipv4); ?> -p <?php echo sanitize_output($iperfport); ?> -P 4</pre>
@@ -1467,7 +1484,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                             foreach ($dlConfigs as $config) :
                                 if ($config['show'] && is_array($testFiles)) :
                                     ?>
-                                    <h5 class="download-section-title"><?php echo $config['title']; ?></h5>
+                                    <h5 class="download-section-title"><?php echo sanitize_output($config['title']); ?></h5>
                                     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
                                         <?php
                                         foreach ($testFiles as $val) {
@@ -1483,7 +1500,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                             <h5 class="download-section-title">SPEEDTEST & REPOSITORY</h5>
                             <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:.4rem 0">
                                 <a href="https://www.speedtest.net" target="_blank" rel="noopener"
-                                    class="btn-download-test btn-speedtest"><i class="fa-solid fa-tachometer-alt"></i>
+                                    class="btn-download-test btn-speedtest"><i class="fa-solid fa-gauge-high"></i>
                                     SPEEDTEST</a>
                                 <a href="https://mirror.sg.gs" target="_blank" rel="noopener"
                                     class="btn-download-test btn-repository"><i class="fa-solid fa-book-atlas"></i>
@@ -1592,7 +1609,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                         </div>
                                         <?php
                                         $isAjax = (($tab['type'] ?? '') === 'ajax');
-                                        $submitLabel = $isAjax ? 'Run ' . sanitize_output($tab['label']) : 'Run Test';
+                                        $submitLabel = $isAjax ? 'Run ' . $tab['label'] : 'Run Test';
                                         ?>
                                         <form class="test-form <?php echo $isAjax ? 'ajax-test-form' : 'network-test-form'; ?>" data-test-type="<?php echo sanitize_output($tab['id']); ?>">
                                             <div class="form-group" style="flex-grow:2">
@@ -1618,9 +1635,9 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                                 </div>
                                             <?php endif; ?>
                                             <div class="form-actions" style="flex-basis:100%;margin-top:.8rem">
-                                                <input type="hidden" name="csrf" value="<?php echo $csrf_token; ?>">
+                                                <input type="hidden" name="csrf" value="<?php echo sanitize_output($csrf_token); ?>">
                                                 <input type="hidden" name="cmd" value="<?php echo sanitize_output($tab['id']); ?>">
-                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i><?php echo $submitLabel; ?></button>
+                                                <button type="submit" class="action-btn action-btn-primary"><i class="fas fa-play"></i><?php echo sanitize_output($submitLabel); ?></button>
                                                 <button type="button" class="action-btn action-btn-reset reset-tab-btn"><i class="fas fa-eraser"></i>Reset</button>
                                             </div>
                                         </form>

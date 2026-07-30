@@ -1,6 +1,8 @@
+<!-- markdownlint-disable MD013 -->
+
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.1.0-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.1.1-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -29,7 +31,7 @@
 
 ### Tampilan Antarmuka
 
-#### Versi 1.1.0-FIX (Terbaru)
+#### Versi 1.1.1 (Terbaru)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -567,6 +569,17 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.1.1 — 2026-07-31 🔒 Keamanan & Refaktorisasi
+
+- **[Keamanan]** Menerapkan `sanitize_output()` pada `$config['title']` pada judul kartu uji unduhan (mitigasi XSS defence-in-depth).
+- **[Keamanan]** Menerapkan `sanitize_output()` pada `$csrf_token` pada input tersembunyi CSRF (mitigasi XSS defence-in-depth).
+- **[Perbaikan]** Memperbaiki bug double-escaping pada `$submitLabel`: memindahkan `sanitize_output()` dari penugasan string ke titik echo.
+- **[Perbaikan]** Memperbarui ikon Font Awesome 6 yang usang: `fa-phone-alt` → `fa-phone`, `fa-shield-alt` → `fa-shield-halved`, `fa-tachometer-alt` → `fa-gauge-high`.
+- **[Perbaikan]** Memperketat tipe `$serverLocation` pada spanduk streaming POST menggunakan `trim((string) $serverLocation)` untuk keamanan tipe eksplisit.
+- **[Dokumentasi]** Memperbarui konstanta `APP_VERSION` menjadi `1.1.1`, tanggal rilis `2026-07-31`, serta memperbarui docblock dan berkas dokumentasi.
+
+---
 
 ### v1.1.0-FIX — 2026-07-29 🛠️ Pemeliharaan & Kepatuhan Pemindai
 

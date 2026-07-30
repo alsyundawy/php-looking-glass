@@ -31,6 +31,10 @@ env:
   # or posted in a PR (pull_request)
   APPLY_FIXES_MODE: commit
 
+  APPLY_FIXES_IF: "false"
+  APPLY_FIXES_IF_PR: "false"
+  APPLY_FIXES_IF_COMMIT: "false"
+
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true

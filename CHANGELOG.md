@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-07-31
+
+### Security & Compliance
+
+- Applied `sanitize_output()` to `$config['title']` in download test card heading (defence-in-depth XSS mitigation).
+- Applied `sanitize_output()` to `$csrf_token` in CSRF hidden input value (defence-in-depth XSS mitigation).
+
+### Bug Fixes & Refactoring
+
+- Fixed double-escaping bug in `$submitLabel`: moved `sanitize_output()` from string assignment to echo points.
+- Updated deprecated Font Awesome 6 icons: `fa-phone-alt` → `fa-phone`, `fa-shield-alt` → `fa-shield-halved`, `fa-tachometer-alt` → `fa-gauge-high`.
+- Hardened `$serverLocation` in POST streaming banner using `trim((string) $serverLocation)` for explicit type safety.
+- Updated application version to `1.1.1` and release date to `2026-07-31`.
+
+---
+
 ## [1.1.0-FIX] - 2026-07-29
 
 ### Security & Compliance
