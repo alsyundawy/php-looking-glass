@@ -7,7 +7,7 @@
  * ========================================================================
  *
  * @package     : Alsyundawy Looking Glass
- * @version     : 1.1.1
+ * @version     : 1.1.1-FIX
  * @author      : Harry Dertin Sutisna Alsyundawy <alsyundawy@gmail.com>
  * @copyright   : Copyleft 2026 Alsyundawy IT Solution
  * @license     : MIT License
@@ -15,7 +15,7 @@
  * @phone       : +62 856-8-515-212 / +62 812-9898-6464
  * @link        : https://github.com/alsyundawy/php-looking-glass
  * @created     : February 16, 2026
- * @modified    : July 31, 2026
+ * @modified    : August 07, 2026
  *
  * CREATED BY:
  * Name        : Harry Dertin Sutisna Alsyundawy
@@ -211,13 +211,27 @@
  *   - Updated APP_VERSION to '1.1.1', APP_UPDATED to '2026-07-31'.
  *   - Updated @version and @modified in file docblock.
  *
+ * v1.1.1-FIX - 2026-08-07
+ *   - Enhanced Download Test Handler: added support for downloading real physical files (e.g. 500MB.bin, 500MB.zip, 100MB.dat, 1GB.bin) present in the script root directory with path-traversal protection and restricted extension filtering (.php, .env, etc.).
+ *   - Maintained automatic fallback to dynamic RAM chunk streaming for arbitrary test sizes (50MB, 100MB, 250MB, 500MB, 1GB, 2GB) when no physical file exists on disk.
+ *   - Added raw socket permission interception for ICMP ping execution errors (SOCK_RAW / Operation not permitted / cap_net_raw+p).
+ *   - Appended clear, step-by-step administrative remediation guidance (setcap, setuid, sysctl ping_group_range) directly inside terminal output stream on permission failure.
+ *   - Security, logic, and code optimization audit across all POST & GET handlers.
+ *   - Fixed fatal error when calling apache_setenv() in non-Apache environments (PHP 8+ compatibility).
+ *   - Fixed main navigation bar website item text to explicitly display 'www.alsyundawy.com' instead of generic 'Website' label.
+ *   - Updated APP_VERSION to '1.1.1-FIX', APP_UPDATED to '2026-08-07'.
+ *
  * ========================================================================
  */
 
 declare(strict_types=1);
 
-const APP_VERSION = '1.1.1';
-const APP_UPDATED = '2026-07-31';
+const APP_VERSION = '1.1.1-FIX';
+const APP_UPDATED = '2026-08-07';
+const HEADER_NO_CACHE = 'Pragma: no-cache';
+const HEADER_NO_ENCODING = 'Content-Encoding: none';
+const HEADER_NO_ACCEL_BUFFERING = 'X-Accel-Buffering: no';
+const TERMINAL_SEPARATOR = "=======================================================================\n";
 
 function errorDie(string $title, string $message): never
 {
@@ -571,7 +585,7 @@ function runProcess(array $command, int $timeout = 30, ?callable $stdoutCallback
 function emitSecurityHeaders(): void
 {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('Pragma: no-cache');
+    header(HEADER_NO_CACHE);
     header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
@@ -707,15 +721,44 @@ $iperfport = '5201';
 /** @var list<string> */
 $testFiles = ['250MB', '500MB', '1GB'];
 
-// --- Download Test Handler (PHP stream generator, no physical files needed) ---
+// --- Download Test Handler (Supports Real Files in script root + PHP dynamic stream fallback) ---
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download'])) {
-    $sizeMap = ['250MB' => 250, '500MB' => 500, '1GB' => 1024];
     $raw_req = $_GET['download'] ?? '';
-    $requested = is_string($raw_req) ? $raw_req : '';
-    $sizeMB = $sizeMap[$requested] ?? 0;
-    if ($sizeMB === 0) {
-        http_response_code(404);
-        die('File not found');
+    $requested = is_string($raw_req) ? trim($raw_req) : '';
+    // Sanitize requested file name to prevent path traversal
+    $requestedFile = basename($requested);
+
+    if ($requestedFile === '') {
+        http_response_code(400);
+        die('Invalid file request');
+    }
+
+    $scriptDir = __DIR__;
+    $candidates = [
+        $scriptDir . '/' . $requestedFile,
+        $scriptDir . '/' . $requestedFile . '.bin',
+        $scriptDir . '/' . $requestedFile . '.zip',
+        $scriptDir . '/' . $requestedFile . '.dat',
+        $scriptDir . '/' . $requestedFile . '.test',
+        $scriptDir . '/' . $requestedFile . '.img',
+        $scriptDir . '/' . $requestedFile . '.iso',
+    ];
+
+    $forbiddenExts = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phar', 'inc', 'env', 'git', 'htaccess', 'yml', 'yaml', 'json', 'md', 'sh'];
+    $realPathToServe = null;
+
+    foreach ($candidates as $candidate) {
+        if (is_file($candidate)) {
+            $realPath = realpath($candidate);
+            $realDir = realpath($scriptDir);
+            if ($realPath !== false && $realDir !== false && str_starts_with($realPath, $realDir)) {
+                $ext = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
+                if (!in_array($ext, $forbiddenExts, true)) {
+                    $realPathToServe = $realPath;
+                    break;
+                }
+            }
+        }
     }
 
     session_write_close();
@@ -727,16 +770,62 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download']))
 
     ob_implicit_flush(true);
 
-    @apache_setenv('no-gzip', '1');
+    if (function_exists('apache_setenv')) {
+        @apache_setenv('no-gzip', '1');
+    }
     @ini_set('zlib.output_compression', '0');
+
+    if ($realPathToServe !== null) {
+        // Stream existing physical real file from root script directory
+        $fileSize = filesize($realPathToServe);
+        $fileName = basename($realPathToServe);
+
+        header('Content-Type: application/octet-stream');
+        if ($fileSize !== false) {
+            header('Content-Length: ' . (string) $fileSize);
+        }
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header(HEADER_NO_ENCODING);
+        header('Cache-Control: no-cache');
+        header(HEADER_NO_CACHE);
+        header(HEADER_NO_ACCEL_BUFFERING);
+
+        $fp = @fopen($realPathToServe, 'rb');
+        if ($fp !== false) {
+            while (!feof($fp) && !connection_aborted()) {
+                $readBuf = fread($fp, 262144);
+                if ($readBuf !== false) {
+                    echo $readBuf;
+                    flush();
+                }
+            }
+            fclose($fp);
+        }
+        exit;
+    }
+
+    // Dynamic Stream Generator Fallback (if real file does not exist on disk)
+    $sizeMap = ['250MB' => 250, '500MB' => 500, '1GB' => 1024];
+    $sizeMB = $sizeMap[$requestedFile] ?? 0;
+
+    if ($sizeMB === 0 && preg_match('/^(\d+)\s*(MB|GB)$/i', $requestedFile, $m)) {
+        $val = (int) $m[1];
+        $unit = strtoupper($m[2]);
+        $sizeMB = ($unit === 'GB') ? ($val * 1024) : $val;
+    }
+
+    if ($sizeMB <= 0) {
+        http_response_code(404);
+        die('File not found');
+    }
 
     header('Content-Type: application/octet-stream');
     header('Content-Length: ' . ($sizeMB * 1024 * 1024));
-    header('Content-Disposition: attachment; filename="' . $requested . '.bin"');
-    header('Content-Encoding: none');
+    header('Content-Disposition: attachment; filename="' . $requestedFile . '.bin"');
+    header(HEADER_NO_ENCODING);
     header('Cache-Control: no-cache');
-    header('Pragma: no-cache');
-    header('X-Accel-Buffering: no');
+    header(HEADER_NO_CACHE);
+    header(HEADER_NO_ACCEL_BUFFERING);
 
     $chunkSize = 262144;
     $total = $sizeMB * 1024 * 1024;
@@ -761,8 +850,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download']))
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     header('Content-Type: text/plain; charset=utf-8');
-    header('X-Accel-Buffering: no');
-    header('Content-Encoding: none');
+    header(HEADER_NO_ACCEL_BUFFERING);
+    header(HEADER_NO_ENCODING);
 
     $raw_host = $_POST['host'] ?? '';
     $host = normalizeHostInput(is_string($raw_host) ? $raw_host : '');
@@ -967,10 +1056,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         exit;
     }
 
-    echo "=======================================================================\n";
+    echo TERMINAL_SEPARATOR;
     echo '|| Menjalankan: ' . commandToDisplay($command) . "\n";
     echo '|| Dari Server: ' . trim($serverLocation);
-    echo "\n=======================================================================\n\n";
+    echo "\n" . TERMINAL_SEPARATOR . "\n";
 
     while (ob_get_level() > 0) {
         @ob_end_clean();
@@ -1002,12 +1091,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     if ($result['stderr'] !== '') {
         echo "\n--- [STDERR] ---\n" . $result['stderr'];
+        if (
+            str_contains($result['stderr'], 'Operation not permitted') ||
+            str_contains($result['stderr'], 'SOCK_RAW') ||
+            str_contains($result['stderr'], 'cap_net_raw')
+        ) {
+            $pingPath = findBinary('ping');
+            echo "\n\n" . TERMINAL_SEPARATOR;
+            echo "|| [SOLUSI PERIZINAN ICMP PING / RAW SOCKET]\n";
+            echo "|| User web server (www-data/apache/nginx) tidak memiliki izin raw socket.\n";
+            echo "|| Silahkan jalankan salah satu perintah berikut pada server Linux Anda:\n";
+            echo "||   1) sudo setcap cap_net_raw+ep " . $pingPath . "\n";
+            echo "||   2) sudo chmod u+s " . $pingPath . "\n";
+            echo "||   3) sudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\"\n";
+            echo TERMINAL_SEPARATOR;
+        }
     }
 
     if ($result['timed_out']) {
-        echo "\n\n=======================================================================\n";
+        echo "\n\n" . TERMINAL_SEPARATOR;
         echo "|| Error: Proses melampaui batas waktu (30 detik) dan telah dihentikan.\n";
-        echo "=======================================================================\n";
+        echo TERMINAL_SEPARATOR;
     }
 
     exit;
@@ -1390,7 +1494,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
 
                         <li class="nav-item">
                             <a href="https://www.alsyundawy.com" target="_blank" rel="noopener">
-                                <i class="fa-solid fa-globe"></i><span>Website</span>
+                                <i class="fa-solid fa-globe"></i><span>www.alsyundawy.com</span>
                             </a>
                         </li>
 
