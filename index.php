@@ -335,7 +335,7 @@ function validateHost(string $host): bool
 
     $labels = explode('.', $host);
     $tld = end($labels);
-    $isTldValid = is_string($tld) && $tld !== '' && !preg_match('/^\d+$/', $tld) && utf8Length($tld) >= 2;
+    $isTldValid = $tld !== '' && !preg_match('/^\d+$/', $tld) && utf8Length($tld) >= 2;
 
     $isBasicValid = !(
         $host === '' ||
@@ -487,10 +487,10 @@ function processDrainRemainingPipes(array $pipes, string &$stdout, string &$stde
 function processCollectReadPipes(array $pipes): array
 {
     $read = [];
-    if (isset($pipes[1]) && is_resource($pipes[1]) && !feof($pipes[1])) {
+    if (isset($pipes[1]) && !feof($pipes[1])) {
         $read[] = $pipes[1];
     }
-    if (isset($pipes[2]) && is_resource($pipes[2]) && !feof($pipes[2])) {
+    if (isset($pipes[2]) && !feof($pipes[2])) {
         $read[] = $pipes[2];
     }
     return $read;
@@ -531,6 +531,7 @@ function runProcess(array $command, int $timeout = 30, ?callable $stdoutCallback
 
     $pipes = [];
     $process = proc_open($command, $descriptorSpec, $pipes);
+    /** @var array<int, resource> $pipes */
 
     if (!is_resource($process)) {
         return [
@@ -673,7 +674,7 @@ if ($cookie_domain !== '') {
 
 session_set_cookie_params($session_cookie_params); // NOSONAR
 
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === (defined('PHP_SESSION_NONE') ? PHP_SESSION_NONE : 1)) {
     session_start();
 }
 
@@ -699,8 +700,6 @@ $ipv6 = 'lg.yourdomain.com';
 $siteName = 'LOOKING GLASS NETWORK TOOLS';
 $defaultUrl = 'https://lg.yourdomain.com';
 $siteUrl = $defaultUrl;
-$siteUrlv4 = $defaultUrl;
-$siteUrlv6 = $defaultUrl;
 $serverLocation = 'JAKARTA - INDONESIA';
 
 // Tool disable flags. Keep false/empty to enable the existing UI tabs.
@@ -771,7 +770,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download']))
     ob_implicit_flush(true);
 
     if (function_exists('apache_setenv')) {
-        @apache_setenv('no-gzip', '1');
+        $_ = @apache_setenv('no-gzip', '1');
     }
     @ini_set('zlib.output_compression', '0');
 
@@ -836,7 +835,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && isset($_GET['download']))
             break;
         }
         $chunk = min($chunkSize, $total - $sent);
-        echo ($chunk < $chunkSize) ? substr($buf, 0, (int) $chunk) : $buf;
+        echo ($chunk < $chunkSize) ? substr($buf, 0, $chunk) : $buf;
         $sent += $chunk;
         if ($sent % (10 * 1024 * 1024) === 0 || connection_aborted()) {
             flush();
@@ -1134,9 +1133,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
     $siteNameSafe = sanitizeOutput($siteName);
     $siteUrlBase = rtrim($siteUrl, '/');
     $siteUrlSafe = sanitizeOutput($siteUrlBase);
-    $rawScript = $_SERVER['SCRIPT_NAME'] ?? '/';
-    $scriptPath = is_string($rawScript) ? $rawScript : '/';
-    $scriptPathSafe = sanitizeOutput($scriptPath);
+    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/';
 
     // Meta description (keep ~150 chars)
     $metaDescription = sprintf(
@@ -1722,7 +1719,7 @@ if (isset($_COOKIE['theme']) && in_array($_COOKIE['theme'], ['light', 'dark'], t
                                     ?>
 
                                     <li class="nav-item">
-                                        <?php if (!empty($tab['link']) && is_string($tab['link'])) : ?>
+                                        <?php if (isset($tab['link']) && $tab['link'] !== '') : ?>
                                             <a href="<?php echo sanitizeOutput($tab['link']); ?>"
                                                 class="nav-link <?php echo $tab['active'] ? 'active' : ''; ?>">
                                                 <i class="fas <?php echo sanitizeOutput($tab['icon']); ?>"></i>

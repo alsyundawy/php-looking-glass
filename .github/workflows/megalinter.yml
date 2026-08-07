@@ -52,7 +52,7 @@ jobs:
     steps:
       # Git Checkout
       - name: Checkout Code
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # SECURITY NOTE: Using a Personal Access Token (PAT) is NOT
           # recommended. Open-source projects have been heavily targeted by
@@ -76,7 +76,7 @@ jobs:
 
         # You can override MegaLinter flavor used to have faster performances
         # More info at https://megalinter.io/latest/flavors/
-        uses: oxsecurity/megalinter@v9
+        uses: oxsecurity/megalinter@3458ed273180fa49b80894ca134ecabdd77b5a8e # v9
 
         id: ml
 
@@ -112,7 +112,7 @@ jobs:
       # Upload MegaLinter artifacts
       - name: Archive production artifacts
         if: success() || failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@4bec3525164d1f2b23616223dd5f4a7c88b0a996 # v7
         with:
           name: MegaLinter reports
           include-hidden-files: "true"
@@ -151,7 +151,7 @@ jobs:
       # Create pull request if applicable
       # (for now works only on PR from same repository, not from forks)
       - name: Create Pull Request with applied fixes
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@271a9a83852151044ec3c21c75c02fb387ffb0e0 # v8
         id: cpr
         if: env.APPLY_FIXES_IF_PR == 'true'
         with:
@@ -180,7 +180,7 @@ jobs:
         run: sudo chown -Rc $UID .git/
 
       - name: Commit and push applied linter fixes
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7
         if: env.APPLY_FIXES_IF_COMMIT == 'true'
         with:
           branch: >-
