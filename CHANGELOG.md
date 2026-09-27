@@ -1,4 +1,4 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD024 MD013 -->
 
 # Changelog
 
@@ -6,6 +6,53 @@ All notable changes to the **Alsyundawy Looking Glass** project will be document
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.1.2] - 2026-09-27
+
+### Responsive & Accessibility
+
+- **Mobile Viewport Enhancement:** Added `overflow-x: clip` to `html` and `body` to eliminate horizontal scroll clipping on narrow viewports (360 px–390 px), including Xiaomi Redmi and POCO devices running MIUI/HyperOS.
+- **Font-Inflation Defense:** Added `-webkit-text-size-adjust: 100%`, `-moz-text-size-adjust: 100%`, and `text-size-adjust: 100%` to `html, body` to prevent vendor browser font-size inflation that breaks layout on sub-400 px screens.
+- **Dynamic Viewport Height:** Standardized `.wrapper` viewport height with progressive enhancement: `min-height: 100vh; min-height: 100dvh;` to seamlessly handle dynamic mobile address-bar collapse and expansion.
+- **Flex Child Containment:** Added `min-width: 0` on `.nav-item`, `.test-form .form-group`, and `.info-card` flex/grid children to prevent intrinsic-size overflow causing horizontal bleed on narrow viewports.
+- **WAI-ARIA Tab Accessibility:** Implemented complete WAI-ARIA tab pattern: added `role="tablist"` on `#networkTestTabs`, `role="presentation"` on navigation item wrappers, `role="tab"`, `aria-controls`, and `aria-selected` on tab buttons, and `role="tabpanel"` and `aria-labelledby` on tab panes.
+
+### Code Quality, Security & Static Analysis
+
+- **Safe Output Sanitizer:** Refactored `sanitizeOutput(mixed $output)` to safely accept `mixed` types with native support for `Stringable` objects, scalars, and `null`, preventing fatal type errors on PHPStan Level Max without invalid type casts.
+- **Strict Process & Command Typing:** Typed `runProcess()` with `list<string>` argv array passed directly to `proc_open()`, resolving Psalm's redundant `array_values` warnings; typed `commandToDisplay()` with `array<int, string>` and strict closure parameter types.
+- **JSON Response Typing:** Added explicit `@param array<string, mixed> $payload` PHPDoc annotation on `jsonResponse()`.
+- **CSRF Token Hardening:** Added strict `is_string($_SESSION['csrf'])` type guard before executing `hash_equals()` to ensure timing-attack resilience and type safety.
+- **Dead Code & Logic Cleanup:** Cleaned up redundant null-coalescing on `$_GET['download']`, redundant `count($parts) < 2` checks in WHOIS key-value parser, and redundant null fallback on `$tab['desc']`.
+- **Strict URL Typings:** Guaranteed string type safety for `$scriptPath` and cleanly separated unescaped `$siteUrlBase` in JSON-LD schemas from HTML-safe `$siteUrlSafe` in meta attributes.
+- **100% Static Analysis Clean:** Verified zero warnings across PHP lint (`php -l`), PHP_CodeSniffer (`phpcs` PSR-12), PHPStan (`level: max`), Psalm (`errorLevel: 1`), and PHP-CS-Fixer dry-run.
+
+### Assets & Documentation
+
+- **Repository Visual Identity:** Created high-resolution 16:9 repository hero banner `assets/php-looking-glass-banner.jpg` and added maintainer banner `assets/alsyundawy-banner.png`.
+- **Verified CDN SRI Integrity:** Verified all five live CDN SRI hashes via `openssl dgst -sha384` against current CDN payloads (Bootstrap 5.3.8 CSS/JS, Font Awesome 6.7.2, jQuery 3.7.1, PureCSS 3.0.0).
+- **Synchronized Release Distribution:** Fully synchronized `index.php` and standalone release file `lg-github-1.1.2.php`.
+- **Updated Documentation:** Updated `README.md`, `README-ID.md`, and created `DOCNOTE.md`.
+- **Version Bump:** Updated `@version` to `1.1.2`, `@modified` to `September 27, 2026`, `APP_VERSION` to `'1.1.2'`, and `APP_UPDATED` to `'2026-09-27'`.
+
+---
+
+## [1.1.1-FIX] - 2026-08-07
+
+### Feature & Storage Enhancements
+
+- **Physical Real File Streaming:** Added support for streaming physical benchmark files (`.bin`, `.zip`, `.dat`, `.test`, `.img`, `.iso`) located directly in the script root directory if present, while retaining automatic dynamic on-the-fly chunked stream generation when files do not exist on disk.
+- **Path Traversal Security:** Implemented strict requested filename sanitization using `basename()` and directory prefix confinement verification via `realpath()`, explicitly preventing path traversal and blocking sensitive file extensions (`php`, `env`, `git`, `htaccess`, `yml`, `json`, `sh`).
+
+### Diagnostics & Operational Usability
+
+- **ICMP / RAW Socket Permission Guidance:** Integrated automated detection and remediation guidance for raw socket / ping errors (`Operation not permitted`, `SOCK_RAW`, `cap_net_raw`) with clear copy-paste commands (`setcap`, `chmod u+s`, `sysctl`).
+
+### Code Refactoring & Constants
+
+- **Header Constants Standardization:** Centralized repetitive HTTP headers and terminal delimiters into dedicated constants (`HEADER_NO_CACHE`, `HEADER_NO_ACCEL_BUFFERING`, `HEADER_NO_ENCODING`, `TERMINAL_SEPARATOR`).
 
 ---
 

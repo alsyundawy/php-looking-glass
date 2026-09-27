@@ -1,8 +1,12 @@
-<!-- markdownlint-disable MD013 -->
+<!-- markdownlint-disable MD013 MD033 MD041 -->
+
+<p align="center">
+  <img src="assets/php-looking-glass-banner.jpg" alt="Alsyundawy PHP Looking Glass Banner" width="100%">
+</p>
 
 # Alsyundawy PHP Looking Glass
 
-[![Version](https://img.shields.io/badge/version-1.1.1-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Version](https://img.shields.io/badge/version-1.1.2-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Latest Release](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Maintenance Status](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -18,7 +22,6 @@
 
 ## Star History
 
-<!-- markdownlint-disable MD033 -->
 <a href="https://star-history.com/#alsyundawy/php-looking-glass&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date&theme=dark" />
@@ -26,13 +29,12 @@
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
  </picture>
 </a>
-<!-- markdownlint-enable MD033 -->
 
 **A professional, lightweight, single-file PHP Looking Glass tool designed for network diagnostics. Fully compatible with IPv4 and IPv6, featuring a modern, responsive UI (Dark/Light mode) and utilizing standard system utilities.**
 
 ### User Interface
 
-#### Version 1.1.1 (Latest)
+#### Version 1.1.2 (Latest)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -571,6 +573,29 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Changelog
 
+### v1.1.2 — 2026-09-27 🚀 Comprehensive Optimization & Hardening
+
+- **[UI/UX]** Added `overflow-x: clip` and `-webkit-text-size-adjust: 100%` on `html, body` preventing horizontal scroll bleed and mobile browser font-inflation on narrow viewports (360px–390px, Redmi/POCO HyperOS).
+- **[UI/UX]** Standardized `.wrapper` dynamic viewport height with progressive `min-height: 100vh; min-height: 100dvh;` seamlessly handling dynamic mobile address bar transitions.
+- **[UI/UX]** Added `min-width: 0` on flex items (`.nav-item`, `.test-form .form-group`, `.info-card`) to eliminate horizontal clipping.
+- **[A11y]** Enhanced WAI-ARIA tab semantics: `role="tablist"` on tabs navigation, `role="presentation"` on item wrappers, `role="tab"`, `aria-controls`, and `aria-selected` on buttons, and `role="tabpanel"` and `aria-labelledby` on tab panes.
+- **[Security]** Hardened CSRF validation with strict `is_string($_SESSION['csrf'])` type guard before `hash_equals()`.
+- **[Security]** Strongly typed `runProcess()` with `list<string>` argv array passed directly to `proc_open()`; sanitized `sanitizeOutput(mixed $output)` supporting `Stringable`, scalars, and null without invalid casts.
+- **[Security]** Cleanly separated unescaped canonical `$siteUrlBase` for JSON-LD schemas from HTML-escaped `$siteUrlSafe` for meta tags.
+- **[Quality]** 100% clean passes on PHP 8.1+ syntax (`php -l`), PHP_CodeSniffer (`phpcs` PSR-12), PHPStan (Level Max), Psalm (errorLevel 1), and PHP-CS-Fixer dry-run.
+- **[Docs]** Added visual banner `assets/php-looking-glass-banner.jpg`, maintainer banner `assets/alsyundawy-banner.png`, detailed architectural notes `DOCNOTE.md`, and synchronized release distribution `lg-github-1.1.2.php`.
+
+---
+
+### v1.1.1-FIX — 2026-08-07 🛠️ Storage & Real File Download Support
+
+- **[Feature]** Added physical real file streaming support for benchmark files (`.bin`, `.zip`, `.dat`, `.test`, `.img`, `.iso`) in the script root directory, with automatic dynamic on-the-fly chunked stream fallback.
+- **[Security]** Strict requested filename sanitization using `basename()` and directory prefix confinement verification via `realpath()`, explicitly preventing path traversal and blocking sensitive file extensions (`php`, `env`, `git`, `htaccess`, `yml`, `json`, `sh`).
+- **[Feature]** Integrated automated detection and remediation guidance for raw socket / ping errors (`Operation not permitted`, `SOCK_RAW`, `cap_net_raw`) with clear copy-paste commands (`setcap`, `chmod u+s`, `sysctl`).
+- **[Refactor]** Centralized repetitive HTTP headers and terminal delimiters into dedicated constants (`HEADER_NO_CACHE`, `HEADER_NO_ACCEL_BUFFERING`, `HEADER_NO_ENCODING`, `TERMINAL_SEPARATOR`).
+
+---
+
 ### v1.1.1 — 2026-07-31 🔒 Security & Refactoring
 
 - **[Security]** Applied `sanitize_output()` to `$config['title']` in download test card heading (defence-in-depth XSS mitigation).
@@ -714,24 +739,52 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ---
 
-## Donation
+## Maintainer & Contact
 
-Anda bebas untuk mengubah, mendistribusikan script ini untuk keperluan anda.
+<p align="center">
+  <a href="https://www.alsyundawy.com">
+    <img src="assets/alsyundawy-banner.png" alt="Alsyundawy IT Solution Banner" width="100%">
+  </a>
+</p>
 
-If you find this project helpful and would like to support it, please consider donating via <https://www.paypal.me/alsyundawy> or <https://ko-fi.com/alsyundawy>. Thank you for your support!
+### Harry Dertin Sutisna Alsyundawy (@alsyundawy)
 
-Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk berdonasi melalui <https://www.paypal.me/alsyundawy> atau <https://ko-fi.com/alsyundawy>. Terima kasih atas dukungannya!
-
-Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk berdonasi melalui QRIS. Terima kasih atas dukungannya!
-
-![QRIS Donation](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
-
-## License
-
-MIT License — Copyright © 2026 **HARRY DS ALSYUNDAWY** — ALSYUNDAWY IT SOLUTION
-
-> **Note:** Please retain credit to the original author (HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION) if you use or modify this script. Attribution is appreciated but not legally required under the MIT License.
+- 🌐 Website: [https://www.alsyundawy.com](https://www.alsyundawy.com)
+- 💻 GitHub: [@alsyundawy](https://github.com/alsyundawy)
+- 🐦 Twitter / X: [@alsyundawy](https://x.com/alsyundawy)
+- 🏢 Organization: [WWW.ALSYUNDAWY.NET](https://www.alsyundawy.net)
+- 📍 Location: DKI Jakarta, Indonesia
 
 ---
 
-![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")
+## Support & Donation
+
+If these scripts are helpful for your setup, you can support development here:
+
+- **PayPal**: [`https://www.paypal.me/alsyundawy`](https://www.paypal.me/alsyundawy)
+- **Ko-fi**: [`https://ko-fi.com/alsyundawy`](https://ko-fi.com/alsyundawy)
+
+### 🇮🇩 QRIS (Quick Response Code Indonesian Standard)
+
+Scan the QRIS barcode below using any Indonesian mobile banking app (BCA, Mandiri, BRI, BNI, BSI, CIMB Niaga, Permata) or e-wallet (GoPay, OVO, DANA, LinkAja, ShopeePay):
+
+![QRIS Donation Barcode - ALSYUNDAWY](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
+
+- **Merchant / Account Name**: **ALSYUNDAWY IT SOLUTION**
+- **NMID**: **`ID1020021153676`**
+- **Direct Barcode Asset Link**: [`https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df`](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
+- **WhatsApp Confirmation**: [`+62 856-8515-212`](https://wa.me/628568515212)
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see the [`LICENSE`](LICENSE) file for details.
+
+Copyright (c) 2026 **Harry Dertin Sutisna Alsyundawy (alsyundawy)**.
+
+> **Note:** Please retain attribution credit to the original author (**HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION**) if you use or distribute this script. Attribution is appreciated though not legally mandated under the MIT License.
+
+---
+
+![Repobeats analytics](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")

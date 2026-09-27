@@ -1,8 +1,12 @@
-<!-- markdownlint-disable MD013 -->
+<!-- markdownlint-disable MD013 MD033 MD041 -->
+
+<p align="center">
+  <img src="assets/php-looking-glass-banner.jpg" alt="Alsyundawy PHP Looking Glass Banner" width="100%">
+</p>
 
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.1.1-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.1.2-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -17,7 +21,6 @@
 
 ## Statistik Bintang
 
-<!-- markdownlint-disable MD033 -->
 <a href="https://star-history.com/#alsyundawy/php-looking-glass&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date&theme=dark" />
@@ -25,13 +28,12 @@
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
  </picture>
  </a>
-<!-- markdownlint-enable MD033 -->
 
 **Sebuah alat Looking Glass PHP yang profesional, ringan, dan terdiri dari satu file, dirancang untuk diagnostik jaringan. Sepenuhnya kompatibel dengan IPv4 dan IPv6, dilengkapi antarmuka modern yang responsif (Mode Gelap/Terang) serta memanfaatkan utilitas sistem standar.**
 
 ### Tampilan Antarmuka
 
-#### Versi 1.1.1 (Terbaru)
+#### Versi 1.1.2 (Terbaru)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -570,6 +572,29 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ## Catatan Perubahan
 
+### v1.1.2 — 2026-09-27 🚀 Optimasi Komprehensif & Pengerasan
+
+- **[UI/UX]** Menambahkan `overflow-x: clip` dan `-webkit-text-size-adjust: 100%` pada `html, body` guna mencegah pergeseran scroll horizontal dan inflasi ukuran font browser mobile pada layar sempit (360px–390px, Redmi/POCO HyperOS).
+- **[UI/UX]** Menstandardisasi tinggi viewport dinamis `.wrapper` dengan peningkatan progresif `min-height: 100vh; min-height: 100dvh;` yang mulus menangani transisi bilah alamat mobile.
+- **[UI/UX]** Menambahkan `min-width: 0` pada elemen flex (`.nav-item`, `.test-form .form-group`, `.info-card`) untuk menghilangkan terpotongnya konten secara horizontal.
+- **[A11y]** Meningkatkan semantik WAI-ARIA tab: `role="tablist"` pada navigasi tab, `role="presentation"` pada pembungkus item, `role="tab"`, `aria-controls`, dan `aria-selected` pada tombol, serta `role="tabpanel"` dan `aria-labelledby` pada panel tab.
+- **[Keamanan]** Memperkuat validasi token CSRF dengan type guard ketat `is_string($_SESSION['csrf'])` sebelum `hash_equals()`.
+- **[Keamanan]** Pengetikan ketat `runProcess()` dengan array argv `list<string>` yang langsung diteruskan ke `proc_open()`; sanitasi `sanitizeOutput(mixed $output)` yang mendukung `Stringable`, skalar, dan null tanpa konversi tipe ilegal.
+- **[Keamanan]** Pemisahan bersih antara kanonikal URL mentah `$siteUrlBase` untuk skema JSON-LD dan `$siteUrlSafe` yang di-escape HTML untuk tag meta.
+- **[Kualitas]** 100% lolos bersih pada sintaks PHP 8.1+ (`php -l`), PHP_CodeSniffer (`phpcs` PSR-12), PHPStan (Level Max), Psalm (errorLevel 1), dan PHP-CS-Fixer dry-run.
+- **[Dokumentasi]** Menambahkan spanduk visual repositori `assets/php-looking-glass-banner.jpg`, spanduk pengelola `assets/alsyundawy-banner.png`, catatan arsitektur mendalam `DOCNOTE.md`, serta sinkronisasi penuh file rilis mandiri `lg-github-1.1.2.php`.
+
+---
+
+### v1.1.1-FIX — 2026-08-07 🛠️ Penyimpanan & Dukungan Unduhan Berkas Nyata
+
+- **[Fitur]** Menambahkan dukungan streaming berkas fisik benchmark (`.bin`, `.zip`, `.dat`, `.test`, `.img`, `.iso`) langsung dari direktori root skrip jika tersedia, dengan fallback otomatis ke generator stream dinamis on-the-fly.
+- **[Keamanan]** Sanitasi ketat nama berkas yang diminta menggunakan `basename()` dan verifikasi pembatasan direktori prefix melalui `realpath()`, secara eksplisit mencegah path traversal dan memblokir ekstensi berkas sensitif (`php`, `env`, `git`, `htaccess`, `yml`, `json`, `sh`).
+- **[Fitur]** Integrasi deteksi otomatis dan panduan perbaikan untuk kendala perizinan raw socket / ping (`Operation not permitted`, `SOCK_RAW`, `cap_net_raw`) lengkap dengan perintah siap pakai (`setcap`, `chmod u+s`, `sysctl`).
+- **[Refaktorisasi]** Sentralisasi header HTTP berulang dan pembatas terminal ke dalam konstanta terdedikasi (`HEADER_NO_CACHE`, `HEADER_NO_ACCEL_BUFFERING`, `HEADER_NO_ENCODING`, `TERMINAL_SEPARATOR`).
+
+---
+
 ### v1.1.1 — 2026-07-31 🔒 Keamanan & Refaktorisasi
 
 - **[Keamanan]** Menerapkan `sanitize_output()` pada `$config['title']` pada judul kartu uji unduhan (mitigasi XSS defence-in-depth).
@@ -713,22 +738,52 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 
 ---
 
-## Donasi
+## Pengelola & Kontak
 
-Anda bebas untuk mengubah dan mendistribusikan skrip ini untuk keperluan Anda.
+<p align="center">
+  <a href="https://www.alsyundawy.com">
+    <img src="assets/alsyundawy-banner.png" alt="Spanduk Alsyundawy IT Solution" width="100%">
+  </a>
+</p>
 
-Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk berdonasi melalui <https://www.paypal.me/alsyundawy>. Terima kasih atas dukungannya!
+### Harry Dertin Sutisna Alsyundawy (@alsyundawy)
 
-Jika Anda merasa terbantu dan ingin mendukung proyek ini, pertimbangkan untuk berdonasi melalui QRIS. Terima kasih atas dukungannya!
-
-![Donasi QRIS](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
-
-## Lisensi
-
-Lisensi MIT — Hak Cipta © 2026 **HARRY DS ALSYUNDAWY** — ALSYUNDAWY IT SOLUTION
-
-> **Catatan:** Cantumkan kredit kepada penulis asli (HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION) apabila Anda menggunakan atau memodifikasi script ini. Atribusi sangat dihargai meski tidak diwajibkan secara hukum oleh Lisensi MIT.
+- 🌐 Situs Web: [https://www.alsyundawy.com](https://www.alsyundawy.com)
+- 💻 GitHub: [@alsyundawy](https://github.com/alsyundawy)
+- 🐦 Twitter / X: [@alsyundawy](https://x.com/alsyundawy)
+- 🏢 Organisasi: [WWW.ALSYUNDAWY.NET](https://www.alsyundawy.net)
+- 📍 Lokasi: DKI Jakarta, Indonesia
 
 ---
 
-![Alt](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")
+## Dukungan & Donasi
+
+Jika skrip ini bermanfaat untuk infrastruktur Anda, Anda dapat memberikan dukungan pengembangan di sini:
+
+- **PayPal**: [`https://www.paypal.me/alsyundawy`](https://www.paypal.me/alsyundawy)
+- **Ko-fi**: [`https://ko-fi.com/alsyundawy`](https://ko-fi.com/alsyundawy)
+
+### 🇮🇩 QRIS (Quick Response Code Indonesian Standard)
+
+Pindai barcode QRIS di bawah ini menggunakan aplikasi mobile banking Indonesia apa pun (BCA, Mandiri, BRI, BNI, BSI, CIMB Niaga, Permata) atau dompet digital (GoPay, OVO, DANA, LinkAja, ShopeePay):
+
+![Barcode Donasi QRIS - ALSYUNDAWY](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
+
+- **Nama Merchant / Akun**: **ALSYUNDAWY IT SOLUTION**
+- **NMID**: **`ID1020021153676`**
+- **Tautan Aset Barcode Langsung**: [`https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df`](https://github.com/user-attachments/assets/a0126f28-6dde-43da-ba14-d7c9a27de0df)
+- **Konfirmasi WhatsApp**: [`+62 856-8515-212`](https://wa.me/628568515212)
+
+---
+
+## Lisensi
+
+Proyek ini dilisensikan di bawah **Lisensi MIT** — lihat berkas [`LICENSE`](LICENSE) untuk detail lengkap.
+
+Hak Cipta (c) 2026 **Harry Dertin Sutisna Alsyundawy (alsyundawy)**.
+
+> **Catatan:** Cantumkan kredit kepada penulis asli (**HARRY DS ALSYUNDAWY — ALSYUNDAWY IT SOLUTION**) apabila Anda menggunakan atau mendistribusikan skrip ini. Atribusi sangat dihargai meski tidak diwajibkan secara hukum di bawah Lisensi MIT.
+
+---
+
+![Repobeats analytics](https://repobeats.axiom.co/api/embed/78ddb5f1a231029b742cc467a74bcce400941d0f.svg "Repobeats analytics image")

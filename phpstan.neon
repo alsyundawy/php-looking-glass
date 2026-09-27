@@ -1,0 +1,6 @@
+parameters:
+    level: max
+    paths:
+        - index.php
+        - lg-github-1.1.2.php
+    treatPhpDocTypesAsCertain: false
