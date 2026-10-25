@@ -3,4 +3,5 @@ parameters:
     paths:
         - index.php
         - lg-github-1.1.2.php
+        - lg-github-1.1.3.php
     treatPhpDocTypesAsCertain: false

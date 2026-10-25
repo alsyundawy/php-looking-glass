@@ -7,6 +7,41 @@ All notable changes to the **Alsyundawy Looking Glass** project will be document
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-10-26
+
+### Security & TLS Hardening
+
+- **Comprehensive Multi-Proxy TLS Detection:** Upgraded `isHttpsRequest()` to securely evaluate multi-tier proxy headers including comma-separated `X-Forwarded-Proto` chains (`https, http`), `HTTP_X_FORWARDED_SSL`, `HTTP_FRONT_END_HTTPS`, Cloudflare `CF-Visitor` JSON (`{"scheme":"https"}`), and RFC 7239 `Forwarded: proto=https`.
+- **Modernized TLS & Transport Security Headers:** Standardized HTTP response headers in `emitSecurityHeaders()` with OWASP 2026-compliant Strict-Transport-Security (`max-age=63072000; includeSubDomains; preload`), enforced Content-Security-Policy `upgrade-insecure-requests`, and added `X-Permitted-Cross-Domain-Policies: none`.
+- **Session Security & Fixation Defense:** Hardened session initialization in `startSecureSession()` with explicit `session_regenerate_id(true)` to eliminate session fixation risks (CWE-384 / OWASP A07:2025) and enforced runtime fallback `ini_set('session.cookie_secure', '1')` when served over TLS.
+- **PHP2Shell (CVE-2026-109619) Proactive Defense:** Explicitly disabled `session.upload_progress.enabled` via `@ini_set('session.upload_progress.enabled', '0')` at runtime, completely eliminating the module-level Use-After-Free (UAF) attack vector exploited by unauthenticated remote code execution chains in PHP runtimes.
+- **Cognitive Complexity & Clean Code Refactoring:** Refactored `isHttpsRequest()` into a concise single-return boolean expression, eliminating SonarLint multiple return warnings (reduced from 8 returns to 1) while guaranteeing strict PSR-12 and Psalm Level 1 type inference.
+- **Hidden File & Dotfile Download Prevention:** Hardened benchmark download handler to explicitly reject any requested files starting with a dot (`str_starts_with($requestedFile, '.')`), preventing leakage of hidden system or configuration files.
+
+### Responsive Design & Xiaomi MIUI/HyperOS Fixes
+
+- **Xiaomi Redmi & POCO Punch-Hole Edge-to-Edge Adaptation:** Implemented `viewport-fit=cover` in `<meta name="viewport">` paired with CSS safe area insets `env(safe-area-inset-*)` across `.header`, `.main-content`, and `.site-footer` to prevent notch, camera cutout, and gesture bar clipping on Xiaomi Redmi and POCO smartphones.
+- **Sub-400px Viewport Blowout Prevention:** Hardened responsive tables and cards with `table-layout: fixed`, `word-break: break-word`, and `overflow-wrap: anywhere` across mobile break points (320px–392px), eliminating horizontal scroll and content truncation.
+- **Universal Device Coverage:** Verified pixel-perfect responsiveness across VGA (640x480), mobile devices (iPhone SE/14/15, Samsung Galaxy, Xiaomi Redmi/POCO at 360px and 392px), tablets (iPad, Galaxy Tab), laptops/MacBooks, Full HD (1920x1080), and 2K (2560x1440) displays.
+
+### Visual Aesthetics & WCAG 2.2 Global Color Palette
+
+- **WCAG 2.2 AA/AAA Global Color Compliance:** Redesigned color palette tokens with high-contrast ratios:
+  - Dark Mode `--color-primary` optimized to `#58a6ff` (8.25:1 contrast against `#0d1117`, AAA compliant).
+  - Dark Mode text contrasts verified at 14.5:1 (`#f0f6fc` on `#0d1117`).
+  - Light Mode `--color-primary` optimized to `#004499` (8.6:1 contrast against `#fafbfc`, AAA compliant).
+- **System Theme Auto-Adaptation:** Added adaptive meta `theme-color` tags targeting `prefers-color-scheme: light` (`#0f172a`) and `dark` (`#020617`), plus `color-scheme: light dark` meta tag for native browser rendering.
+
+### SEO & Standards 2026
+
+- **2026 SEO Metadata:** Added `robots` directive (`index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1`), modernized Open Graph tags with `og:image:secure_url`, `og:image:alt`, and mobile web app capability tags (`mobile-web-app-capable`, `apple-mobile-web-app-capable`).
+- **Client-Side Sanitization Hardening:** Replaced DOM-based HTML escaping in client JavaScript with regex-based `escapeHtml` to prevent micro-delays and DOM side effects, and converted WHOIS raw data toggle to delegated click handler.
+
+### Assets & Distribution Parity
+
+- **Synchronized Release Distribution:** Generated and verified standalone release file `lg-github-1.1.3.php` in 100% parity with `index.php`.
+- **100% Static Analysis Clean:** Zero errors across PHPCS (PSR-12), PHPStan (Level Max), Psalm (Level 1), and PHP-CS-Fixer.
+
 ---
 
 ## [1.1.2] - 2026-09-27

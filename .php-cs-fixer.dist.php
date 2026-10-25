@@ -12,7 +12,8 @@ $finder = Finder::create()
     ->notName('lg-github-1.1.1.php')
     ->notName('.php-cs-fixer*.php')
     ->name('index.php')
-    ->name('lg-github-1.1.2.php');
+    ->name('lg-github-1.1.2.php')
+    ->name('lg-github-1.1.3.php');
 
 $config = new Config();
 
