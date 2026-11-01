@@ -6,7 +6,7 @@
 
 # Alsyundawy PHP Looking Glass
 
-[![Versi](https://img.shields.io/badge/versi-1.1.2-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
+[![Versi](https://img.shields.io/badge/versi-1.1.3-brightgreen.svg)](https://github.com/alsyundawy/php-looking-glass/releases)
 ![PHP](https://img.shields.io/badge/php-%3E%3D8.1-777bb4.svg)
 [![Rilis Terbaru](https://img.shields.io/github/v/release/alsyundawy/php-looking-glass)](https://github.com/alsyundawy/php-looking-glass/releases)
 [![Status Pemeliharaan](https://img.shields.io/maintenance/yes/9999)](https://github.com/alsyundawy/php-looking-glass/)
@@ -27,13 +27,18 @@
    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=alsyundawy/php-looking-glass&type=Date" />
  </picture>
- </a>
+</a>
 
 **Sebuah alat Looking Glass PHP yang profesional, ringan, dan terdiri dari satu file, dirancang untuk diagnostik jaringan. Sepenuhnya kompatibel dengan IPv4 dan IPv6, dilengkapi antarmuka modern yang responsif (Mode Gelap/Terang) serta memanfaatkan utilitas sistem standar.**
 
+> 📦 **[`GitHub Releases (v1.1.3)`](https://github.com/alsyundawy/php-looking-glass/releases/tag/1.1.3)** &nbsp;|&nbsp;
+> 📘 **[`DocNote (Audit 14-Pilar)`](DOCNOTE.md)** &nbsp;|&nbsp;
+> 📜 **[`Changelog`](CHANGELOG.md)** &nbsp;|&nbsp;
+> 🔒 **[`Kebijakan Keamanan`](SECURITY.md)**
+
 ### Tampilan Antarmuka
 
-#### Versi 1.1.2 (Terbaru)
+#### Versi 1.1.3 (Terbaru)
 
 ![looking-glass](php-looking-glass-v1.0.9.png)
 
@@ -571,6 +576,22 @@ dd if=/dev/zero of=1GB.bin bs=1M count=1024 status=progress
 ---
 
 ## Catatan Perubahan
+
+### v1.1.3 — 2026-10-26 (Terverifikasi 2026-11-01) 🚀 Pengerasan Produksi, Pertahanan PHP2Shell & TLS 2026
+
+- **[Keamanan]** Deteksi TLS Multi-Proxy Komprehensif pada `isHttpsRequest()` yang mendukung rantai `X-Forwarded-Proto` dipisah koma (`https, http`), `HTTP_X_FORWARDED_SSL`, `HTTP_FRONT_END_HTTPS`, JSON Cloudflare `CF-Visitor`, dan RFC 7239 `Forwarded: proto=https`.
+- **[Keamanan]** Peningkatan HSTS ke standar 2 tahun OWASP 2026 (`max-age=63072000; includeSubDomains; preload`), CSP `upgrade-insecure-requests`, dan `X-Permitted-Cross-Domain-Policies: none`.
+- **[Keamanan]** Mitigasi proaktif PHP2Shell (CVE-2026-109619): penonaktifan eksplisit `session.upload_progress.enabled` saat booting untuk mengeliminasi celah Use-After-Free pada modul core PHP.
+- **[Keamanan]** Pengerasan keamanan sesi dengan regenerasi ID sesi proaktif (`session_regenerate_id(true)`) guna memitigasi risiko fiksasi sesi (CWE-384).
+- **[Keamanan]** Pengerasan unduhan berkas benchmark dengan memblokir seluruh permintaan dotfile tersembunyi (`str_starts_with($requestedFile, '.')`).
+- **[UI/UX]** Adaptasi tata letak edge-to-edge punch-hole Xiaomi Redmi & POCO menggunakan `viewport-fit=cover` dan CSS safe-area insets 4-arah (`env(safe-area-inset-*)`).
+- **[UI/UX]** Pembatasan tabel mobile sub-400px dengan `table-layout: fixed`, `word-break: break-word`, dan `overflow-wrap: anywhere` pada breakpoint mobile (320px–392px).
+- **[A11y]** Palet warna global bersertifikasi WCAG 2.2 AA/AAA: Mode Gelap `--color-primary` `#58a6ff` (8.25:1 AAA) dan Mode Terang `#004499` (8.6:1 AAA).
+- **[SEO]** Paket metadata SEO 2026: Schema.org JSON-LD dinamis, meta tag `theme-color` sistem adaptif untuk mode terang (`#0f172a`) dan gelap (`#020617`), serta meta tag kapabilitas web app mobile.
+- **[Kualitas]** Terverifikasi audit kode 14-Pilar; 100% lolos bersih pada PHP lint (`php -l`), PHP_CodeSniffer (PSR-12), PHPStan (Level Max), Psalm (Level 1, 99.8974% inferensi tipe), dan PHP-CS-Fixer.
+- **[Paritas]** Paritas 100% byte-for-byte antara `index.php` dan file distribusi mandiri `lg-github-1.1.3.php`.
+
+---
 
 ### v1.1.2 — 2026-09-27 🚀 Optimasi Komprehensif & Pengerasan
 
